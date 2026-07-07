@@ -35,10 +35,13 @@ export type ChannelSummary = {
 export function paidChannelSummary(d: Dataset): ChannelSummary[] {
   const cvByCh = cvCountByChannel(d.cvs);
   const metaKRW = sum(d.meta.map((r) => r.spend));
+  // CV kênh Meta = lead Meta tự báo cáo (cột Leads của raw-data-v2), KHÔNG đếm theo
+  // source "landing-page_meta" trong Candidate Data (trước chưa gắn utm nên sót nhiều).
+  const metaLeads = sum(d.meta.map((r) => r.leads));
   const rows: ChannelSummary[] = [{
     channel: "meta", label: CHANNEL_META.meta.label, ccy: "KRW",
-    spend: metaKRW, spendVnd: toVnd(metaKRW), cvs: cvByCh.meta,
-    costPerCvVnd: cvByCh.meta > 0 ? toVnd(metaKRW) / cvByCh.meta : null, jobs: null,
+    spend: metaKRW, spendVnd: toVnd(metaKRW), cvs: metaLeads,
+    costPerCvVnd: metaLeads > 0 ? toVnd(metaKRW) / metaLeads : null, jobs: null,
   }];
   for (const ch of ["linkedin", "itviec", "topdev"] as const) {
     const slots = d.jobSlots.filter((s) => s.channel === ch);

@@ -36,6 +36,9 @@ export default async function PaidChannelPage() {
               <Metric label="CV" value={fmtInt(r.cvs)} />
               <Metric label="Cost/CV" value={r.costPerCvVnd ? fmtVnd(r.costPerCvVnd) : "—"} />
             </div>
+            {r.channel === "meta" && (
+              <p className="mt-2 text-[11px] text-black/40">CV = lead Meta báo cáo (raw-data-v2)</p>
+            )}
           </div>
         ))}
       </section>
