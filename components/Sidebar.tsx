@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconDashboard, IconJd, IconBudget } from "./Icons";
+import { IconDashboard, IconJd, IconBudget, IconCalendarDays } from "./Icons";
 
 const NAV = [
   { href: "/", label: "Paid channel", Icon: IconDashboard },
-  { href: "/jd", label: "CV theo JD", Icon: IconJd },
+  { href: "/jd", label: "Cost per CV by JD", Icon: IconJd },
   { href: "/budget", label: "Budget theo tháng", Icon: IconBudget },
+  { href: "/daily", label: "Daily CV Tracking by JD", Icon: IconCalendarDays },
 ];
 
 export function Sidebar() {

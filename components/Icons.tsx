@@ -19,6 +19,12 @@ export const IconBudget = ({ className = base }: P) => (
     <rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 9h18M8 3v4M16 3v4" /><path d="M12 12v5M9.5 13.5h3.2a1.3 1.3 0 0 1 0 2.6H10" />
   </svg>
 );
+export const IconCalendarDays = ({ className = base }: P) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="4" width="18" height="17" rx="2" /><path d="M3 9h18M8 2v4M16 2v4" />
+    <path d="M8 13h.01M12 13h.01M16 13h.01M8 17h.01M12 17h.01" />
+  </svg>
+);
 
 // icon nhỏ trong tròn gradient của thẻ KPI (fill trắng)
 const wbase = "h-5 w-5";

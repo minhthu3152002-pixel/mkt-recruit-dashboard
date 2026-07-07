@@ -20,7 +20,7 @@ export default async function JdPage() {
 
   return (
     <>
-      <Header source={d.source} title="CV theo JD" eyebrow="Chi phí & cost/CV cho từng job" />
+      <Header source={d.source} title="Cost per CV by JD" eyebrow="Chi phí & cost/CV cho từng job" />
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard tone="blue" icon={<IconUsers />} label="Tổng CV" value={fmtInt(totalCvs)} delta={mom.cvs} />
