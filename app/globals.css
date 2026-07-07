@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --canvas: #f6f5f2;
+  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+
+html,
+body {
+  background: var(--canvas);
+  color: #14131b;
+  -webkit-font-smoothing: antialiased;
+}
+
+.card {
+  @apply rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(20,19,27,0.04)];
+}
+
+.eyebrow {
+  @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40;
+}
+
+.stat {
+  @apply font-display text-3xl font-bold tracking-tight;
+}
+
+.pill {
+  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold;
+}
+
+/* thin channel-colored rail on the left of a card */
+.rail {
+  border-left: 3px solid var(--rail, #5b3df5);
+}
