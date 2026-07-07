@@ -2,6 +2,7 @@ import { google } from "googleapis";
 import { Dataset, CandidateRow, MetaSpendRow, JobSlotRow, BudgetPlanRow } from "./types";
 import { SAMPLE } from "./sample-data";
 import { SOURCE_TABS, pick, extractJdCode, companyFromCode, cleanTitle, parseFlexibleDate } from "./candidate-source";
+import { applyCvOverrides } from "./overrides";
 
 function hasCreds() {
   return Boolean(
@@ -164,7 +165,8 @@ export async function getDataset(): Promise<Dataset> {
       fetchPlan(mkt),
     ]);
     if (cvs.length === 0) return SAMPLE;
-    return { cvs, meta, jobSlots: [...linkedin, ...itviec, ...topdev], plan, source: "sheets" };
+    // Áp ngoại lệ nhập tay (vd CV LinkedIn free bị gắn nhầm paid) tại 1 điểm duy nhất.
+    return { cvs: applyCvOverrides(cvs), meta, jobSlots: [...linkedin, ...itviec, ...topdev], plan, source: "sheets" };
   } catch (err) {
     console.error("[sheets] read failed, using sample:", err);
     return SAMPLE;

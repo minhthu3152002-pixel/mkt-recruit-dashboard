@@ -2,9 +2,11 @@
 import { useState } from "react";
 import type { JobSlotRow } from "@/lib/types";
 import type { Channel } from "@/lib/sources";
-import { channelCostInRange, toVnd, fmtVnd, fmtKrw, fmtInt } from "@/lib/metrics";
+import { channelCostInRange, toVnd, fmtVnd, fmtKrw, fmtInt, KRW_TO_VND } from "@/lib/metrics";
+import { KpiCard } from "@/components/KpiCard";
 import { Dot } from "@/components/Bits";
 import { chColor } from "@/components/theme";
+import { IconCoin, IconUsers, IconTag } from "@/components/Icons";
 
 type LiteMeta = { date: string; spend: number; leads: number };
 type LiteCv = { date: string; ch: Channel };
@@ -29,16 +31,24 @@ export function RangePanel({
     (a, m) => (m.date >= from && m.date <= to ? { spend: a.spend + m.spend, leads: a.leads + m.leads } : a),
     { spend: 0, leads: 0 }
   );
-  const cvInRange = (ch: Channel) => cvs.filter((c) => c.ch === ch && c.date >= from && c.date <= to).length;
+  const cvCount = (ch: Channel) => cvs.filter((c) => c.ch === ch && c.date >= from && c.date <= to).length;
+
+  // CV theo kênh trong range (Meta = leads; còn lại = đếm CV theo ngày nộp).
+  const cv = { meta: metaAgg.leads, linkedin: cvCount("linkedin"), itviec: cvCount("itviec"), topdev: cvCount("topdev") };
 
   function stat(key: Exclude<Channel, "free">) {
     if (key === "meta") {
-      const spend = metaAgg.spend, spendVnd = toVnd(spend), cv = metaAgg.leads;
-      return { ccy: "KRW" as const, spend, spendVnd, cv, cpc: cv > 0 ? spendVnd / cv : null };
+      const spend = metaAgg.spend, spendVnd = toVnd(spend);
+      return { ccy: "KRW" as const, spend, spendVnd, cv: cv.meta, cpc: cv.meta > 0 ? spendVnd / cv.meta : null };
     }
-    const spend = jobCost[key], cv = cvInRange(key);
-    return { ccy: "VND" as const, spend, spendVnd: spend, cv, cpc: cv > 0 ? spend / cv : null };
+    const spend = jobCost[key];
+    return { ccy: "VND" as const, spend, spendVnd: spend, cv: cv[key], cpc: cv[key] > 0 ? spend / cv[key] : null };
   }
+
+  // 3 thẻ tổng theo range (không badge "so với tháng trước").
+  const totalCost = toVnd(metaAgg.spend) + jobCost.linkedin + jobCost.itviec + jobCost.topdev;
+  const totalCv = cv.meta + cv.linkedin + cv.itviec + cv.topdev;
+  const blended = totalCv > 0 ? totalCost / totalCv : null;
 
   const inputCls =
     "rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-ink focus:border-pink focus:outline-none focus:ring-2 focus:ring-pink/20";
@@ -60,6 +70,13 @@ export function RangePanel({
             <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} className={inputCls} />
           </label>
         </div>
+      </div>
+
+      {/* 3 thẻ tổng theo range — cùng design 3 thẻ tổng overview, KHÔNG có badge % */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <KpiCard tone="pink" icon={<IconCoin />} label="Tổng chi phí (VND-equiv)" value={fmtVnd(totalCost)} sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} />
+        <KpiCard tone="blue" icon={<IconUsers />} label="CV từ kênh paid" value={fmtInt(totalCv)} sub="gán theo nguồn" />
+        <KpiCard tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={blended != null ? fmtVnd(blended) : "—"} sub="chi phí paid ÷ CV paid" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

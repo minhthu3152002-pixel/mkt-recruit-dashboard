@@ -31,6 +31,7 @@ export const SOURCE_TO_CHANNEL: Record<string, Channel> = {
   ybox: "free",
   "jobs-go": "free",
   fyi: "free",
+  linkedin_free_manual: "free", // CV LinkedIn free do ngoại lệ nhập tay (xem lib/overrides.ts)
 };
 
 export const META_PAID_SOURCE = "landing-page_meta";
