@@ -3,7 +3,7 @@ import "./globals.css";
 import { AppShell } from "@/components/AppShell";
 
 export const metadata: Metadata = {
-  title: "Recruit Dashboard",
+  title: "Marketing Dashboard",
   description: "CV acquisition & cost per CV across channels",
 };
 

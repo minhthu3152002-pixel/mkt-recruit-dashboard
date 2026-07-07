@@ -6,7 +6,7 @@ import { IconDashboard, IconJd, IconBudget, IconCalendarDays, IconMenu, IconChev
 const NAV = [
   { href: "/", label: "Paid channel", Icon: IconDashboard },
   { href: "/jd", label: "Cost per CV by JD", Icon: IconJd },
-  { href: "/budget", label: "Budget theo tháng", Icon: IconBudget },
+  { href: "/budget", label: "Monthly Budget", Icon: IconBudget },
   { href: "/daily", label: "Daily CV Tracking by JD", Icon: IconCalendarDays },
 ];
 
@@ -28,8 +28,8 @@ export function Sidebar({
       >
         {/* Logo + tên */}
         <div className={`mb-3 flex items-center gap-2.5 px-2 ${collapsed ? "md:justify-center md:px-0" : ""}`}>
-          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-pink font-display text-lg font-extrabold text-white shadow-pill">R</div>
-          <span className={`font-display text-xl font-extrabold tracking-tight text-ink ${collapsed ? "md:hidden" : ""}`}>Recruit</span>
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-pink font-display text-lg font-extrabold text-white shadow-pill">M</div>
+          <span className={`font-display text-[15px] font-extrabold leading-tight tracking-tight text-ink ${collapsed ? "md:hidden" : ""}`}>Marketing Dashboard</span>
         </div>
 
         {/* Nút thu/mở (desktop) */}
@@ -62,8 +62,9 @@ export function Sidebar({
         </nav>
 
         <div className={`mt-auto rounded-2xl bg-gradient-to-b from-pink-soft to-blue-soft p-4 text-center ${collapsed ? "md:hidden" : ""}`}>
-          <div className="font-display text-lg font-extrabold text-ink">Recruit<span className="text-pink">·</span>KTC</div>
+          <div className="font-display text-base font-extrabold leading-tight text-ink">Marketing Dashboard<span className="text-pink">·</span>KTC</div>
           <p className="mt-1 text-[11px] leading-relaxed text-muted">Chi phí &amp; CV theo kênh — cập nhật trực tiếp từ Google Sheets.</p>
+          <p className="mt-2 text-[10px] italic text-muted/70">mavis</p>
         </div>
       </aside>
     </>

@@ -31,7 +31,7 @@ export default async function BudgetPage() {
 
   return (
     <>
-      <Header source={d.source} title="Budget theo tháng" eyebrow="Đã sài bao nhiêu theo từng kênh" />
+      <Header source={d.source} title="Monthly Budget" eyebrow="Đã sài bao nhiêu theo từng kênh" />
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <KpiCard tone="pink" icon={<IconCoin />} label="Đã chi (VND-equiv)" value={fmtVnd(totalActual)} delta={mom.spendVnd} />

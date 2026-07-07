@@ -30,7 +30,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <IconMenu />
           </button>
           <span className="flex items-center gap-2 font-display font-extrabold text-ink">
-            <span className="grid h-7 w-7 place-items-center rounded-lg bg-pink text-sm text-white">R</span>Recruit
+            <span className="grid h-7 w-7 place-items-center rounded-lg bg-pink text-sm text-white">M</span>Marketing Dashboard
           </span>
         </div>
 

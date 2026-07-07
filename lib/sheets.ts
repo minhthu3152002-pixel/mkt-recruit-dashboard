@@ -101,13 +101,39 @@ async function fetchJobTab(mktId: string, tab: string, channel: "itviec" | "topd
   }));
 }
 
-async function fetchPlan(mktId: string): Promise<BudgetPlanRow[]> {
+// ---- Kế hoạch budget theo tháng ----
+// Tháng 5: HARDCODE (nguồn: tab may-report, cột "Planned Budget").
+const MAY_PLAN: BudgetPlanRow[] = [
+  { month: "2026-05", channel: "meta", budget: 15000000 }, // Event & Talent Pool (gộp Hackathon+Mentoring -> 20000000)
+  { month: "2026-05", channel: "linkedin", budget: 8100000 },
+  { month: "2026-05", channel: "topdev", budget: 19764000 },
+  { month: "2026-05", channel: "itviec", budget: 11145600 },
+];
+
+// "Tháng 6" -> "2026-06"; hoặc chuỗi ngày/serial -> YYYY-MM; khác -> "".
+function monthFromLabel(v: any): string {
+  const s = String(v ?? "").trim();
+  const m = s.match(/th[aá]ng\s*(\d{1,2})/i);
+  if (m) { const mo = Number(m[1]); if (mo >= 1 && mo <= 12) return `2026-${String(mo).padStart(2, "0")}`; }
+  const d = parseFlexibleDate(s);
+  return d ? d.slice(0, 7) : "";
+}
+
+// Tháng 6+: đọc động từ tab "mkt-budget". Cột A=Tháng, K=Meta, L=LinkedIn, M=ITviec (VND).
+// Không có TopDev cho T6+. Chỉ lấy month >= 2026-06 (T5 đã hardcode).
+async function fetchMktBudget(mktId: string): Promise<BudgetPlanRow[]> {
   try {
-    const rows = await read(mktId, a1("plan", "A2:C1000"));
-    const ok = ["meta", "linkedin", "itviec", "topdev", "free"];
-    return rows
-      .filter((r) => r[0] && ok.includes(String(r[1] ?? "").trim().toLowerCase()))
-      .map((r) => ({ month: String(r[0]).trim(), channel: String(r[1]).trim().toLowerCase() as any, budget: num(r[2]) }));
+    const rows = await read(mktId, a1("mkt-budget", "A1:M2000"));
+    const out: BudgetPlanRow[] = [];
+    for (const r of rows) {
+      const month = monthFromLabel(r[0]);
+      if (!month || month < "2026-06") continue;
+      const add = (channel: BudgetPlanRow["channel"], v: any) => { const b = num(v); if (b > 0) out.push({ month, channel, budget: b }); };
+      add("meta", r[10]);     // cột K
+      add("linkedin", r[11]); // cột L
+      add("itviec", r[12]);   // cột M
+    }
+    return out;
   } catch {
     return [];
   }
@@ -156,17 +182,18 @@ export async function getDataset(): Promise<Dataset> {
       console.error(`[sheets] đọc "${tab}" (marketing) hỏng:`, e?.message ?? e);
       return [] as any[];
     };
-    const [cvs, meta, linkedin, itviec, topdev, plan] = await Promise.all([
+    const [cvs, meta, linkedin, itviec, topdev, mktPlan] = await Promise.all([
       fetchCandidates(cand),
       fetchMeta(mkt).catch(warn("raw-data-v2")) as Promise<MetaSpendRow[]>,
       fetchLinkedin(mkt).catch(warn("linkedin-paid-jobs")) as Promise<JobSlotRow[]>,
       fetchJobTab(mkt, "it-viec", "itviec").catch(warn("it-viec")) as Promise<JobSlotRow[]>,
       fetchJobTab(mkt, "top-dev", "topdev").catch(warn("top-dev")) as Promise<JobSlotRow[]>,
-      fetchPlan(mkt),
+      fetchMktBudget(mkt).catch(warn("mkt-budget")) as Promise<BudgetPlanRow[]>,
     ]);
     if (cvs.length === 0) return SAMPLE;
     // Áp ngoại lệ nhập tay (vd CV LinkedIn free bị gắn nhầm paid) tại 1 điểm duy nhất.
-    return { cvs: applyCvOverrides(cvs), meta, jobSlots: [...linkedin, ...itviec, ...topdev], plan, source: "sheets" };
+    // Plan = Tháng 5 hardcode + Tháng 6+ từ mkt-budget.
+    return { cvs: applyCvOverrides(cvs), meta, jobSlots: [...linkedin, ...itviec, ...topdev], plan: [...MAY_PLAN, ...mktPlan], source: "sheets" };
   } catch (err) {
     console.error("[sheets] read failed, using sample:", err);
     return SAMPLE;
