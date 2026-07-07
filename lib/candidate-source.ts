@@ -58,11 +58,17 @@ function serialToDate(n: number): string {
   return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
 }
 
-// dd/MM/yyyy | MM/dd | yyyy-mm-dd (+ giờ) | serial number -> "YYYY-MM-DD" | ""
-export function parseFlexibleDate(raw: any): string {
+// Định dạng ngày theo NGUỒN (đừng đoán mù khi cả 2 số <=12):
+//  - "MDY": M/D/YYYY  (linkedin-paid-jobs, numFmt m/d/yyyy)
+//  - "DMY": D-M-YYYY  (it-viec/top-dev numFmt dd-mm-yyyy; Candidate Data dd/MM/yyyy)
+//  - "auto": year-first = ISO; nếu số 2 >12 -> MM/dd. Dùng cho raw-data-v2 (yyyy-mm-dd).
+export type DateFormat = "MDY" | "DMY" | "auto";
+
+// serial | M/D/YYYY | D-M-YYYY | yyyy-mm-dd (+ giờ) -> "YYYY-MM-DD" | ""
+export function parseFlexibleDate(raw: any, fmt: DateFormat = "auto"): string {
   const s = String(raw ?? "").trim();
   if (!s) return "";
-  // Serial dạng "46149" / "46149.0" (không có dấu / hoặc -) -> quy đổi.
+  // Serial dạng "46149" / "46149.0" (không có dấu / hoặc -) -> quy đổi (không mơ hồ).
   const serial = s.replace(/,/g, "");
   if (/^\d{4,6}(\.0+)?$/.test(serial)) {
     const n = Math.trunc(Number(serial));
@@ -70,12 +76,20 @@ export function parseFlexibleDate(raw: any): string {
   }
   const m = s.match(/(\d{1,4})\s*[\/\-]\s*(\d{1,2})(?:\s*[\/\-]\s*(\d{2,4}))?/);
   if (!m) return "";
-  let a = parseInt(m[1], 10), b = parseInt(m[2], 10);
+  const a = parseInt(m[1], 10), b = parseInt(m[2], 10);
   let y = m[3] ? parseInt(m[3], 10) : new Date().getFullYear();
   if (y < 100) y += 2000;
-  let day = a, month = b;
-  if (a > 31) { y = a; month = b; day = m[3] ? parseInt(m[3], 10) : 1; } // ISO yyyy-mm-dd
-  else if (a <= 12 && b > 12) { month = a; day = b; }                    // MM/dd
+  let day: number, month: number;
+  if (a > 31) {                                  // year-first (ISO) — luôn ưu tiên
+    y = a; month = b; day = m[3] ? parseInt(m[3], 10) : 1;
+  } else if (fmt === "MDY") {
+    month = a; day = b;
+  } else if (fmt === "DMY") {
+    day = a; month = b;
+  } else {                                       // auto: dd/MM, chỉ lật khi số 2 >12
+    day = a; month = b;
+    if (a <= 12 && b > 12) { month = a; day = b; }
+  }
   if (month < 1 || month > 12 || day < 1 || day > 31) return "";
   return `${y}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
