@@ -119,14 +119,14 @@ function monthFromLabel(v: any): string {
   return d ? d.slice(0, 7) : "";
 }
 
-// Tháng 6+: đọc động từ tab "mkt-budget". Cột A=Tháng, K=Meta, L=LinkedIn, M=ITviec (VND).
+// Tháng 6+: đọc động từ tab "mkt-budget". Cột B=Tháng, K=Meta, L=LinkedIn, M=ITviec (VND).
 // Không có TopDev cho T6+. Chỉ lấy month >= 2026-06 (T5 đã hardcode).
 async function fetchMktBudget(mktId: string): Promise<BudgetPlanRow[]> {
   try {
     const rows = await read(mktId, a1("mkt-budget", "A1:M2000"));
     const out: BudgetPlanRow[] = [];
     for (const r of rows) {
-      const month = monthFromLabel(r[0]);
+      const month = monthFromLabel(r[1]); // cột B = "Tháng N"
       if (!month || month < "2026-06") continue;
       const add = (channel: BudgetPlanRow["channel"], v: any) => { const b = num(v); if (b > 0) out.push({ month, channel, budget: b }); };
       add("meta", r[10]);     // cột K
