@@ -67,7 +67,13 @@ export default async function JdPage() {
                   <td className="px-3 py-3.5 text-right tabular-nums text-muted">{j.jobSlotVnd > 0 ? fmtVnd(j.jobSlotVnd) : "—"}</td>
                   <td className="px-3 py-3.5 text-right tabular-nums text-muted">{j.metaKRW > 0 ? fmtKrw(j.metaKRW) : "—"}</td>
                   <td className="px-6 py-3.5 text-right">
-                    {j.costPerCvVnd ? <ValueBadge tone="pink">{fmtVnd(j.costPerCvVnd)}</ValueBadge> : <ValueBadge tone="green">miễn phí</ValueBadge>}
+                    {j.costPerCvVnd ? (
+                      <ValueBadge tone="pink">{fmtVnd(j.costPerCvVnd)}</ValueBadge>
+                    ) : j.cvPaid > 0 ? (
+                      <ValueBadge tone="warn">đang cập nhật giá</ValueBadge>
+                    ) : (
+                      <ValueBadge tone="green">miễn phí</ValueBadge>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -75,9 +81,13 @@ export default async function JdPage() {
           </table>
         </div>
       </div>
-      <p className="px-1 text-xs text-muted">
-        Cost/CV = (job-slot theo Job code + phần Meta chia đều, quy đổi VND) ÷ tổng CV của JD. JD không chạy paid → miễn phí.
-      </p>
+      <div className="space-y-1 px-1 text-xs text-muted">
+        <p>Cost/CV = (job-slot theo Job code + phần Meta chia đều, quy đổi VND) ÷ tổng CV của JD.</p>
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <ValueBadge tone="green">miễn phí</ValueBadge> chỉ có CV từ kênh không tốn phí ·
+          <ValueBadge tone="warn">đang cập nhật giá</ValueBadge> có CV kênh trả phí (Meta/LinkedIn/ITviec/TopDev) nhưng chưa nhập giá vào sheet Marketing.
+        </p>
+      </div>
     </>
   );
 }

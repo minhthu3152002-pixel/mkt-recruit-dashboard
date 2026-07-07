@@ -13,13 +13,14 @@ export function Dot({ color }: { color: string }) {
 }
 
 // Badge đen bo tròn chứa % (giống cột Sales của Top Products).
-export function ValueBadge({ children, tone = "dark" }: { children: React.ReactNode; tone?: "dark" | "pink" | "green" | "up" | "down" }) {
+export function ValueBadge({ children, tone = "dark" }: { children: React.ReactNode; tone?: "dark" | "pink" | "green" | "up" | "down" | "warn" }) {
   const cls: Record<string, string> = {
     dark: "bg-ink text-white",
     pink: "bg-pink-soft text-pink-600",
     green: "bg-free/12 text-free",
     up: "bg-up/10 text-up",
     down: "bg-down/10 text-down",
+    warn: "bg-amber-100 text-amber-700",
   };
   return <span className={`pill justify-center ${cls[tone]}`}>{children}</span>;
 }

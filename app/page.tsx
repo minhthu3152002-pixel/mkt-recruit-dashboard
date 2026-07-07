@@ -1,8 +1,10 @@
 import { getDataset } from "@/lib/sheets";
 import { paidChannelSummary, monthOverMonth, fmtVnd, fmtKrw, fmtInt, KRW_TO_VND } from "@/lib/metrics";
+import { classifySource } from "@/lib/sources";
 import { KpiCard } from "@/components/KpiCard";
 import { Header } from "@/components/Header";
 import { ChannelSpendBar } from "@/components/Charts";
+import { RangePanel } from "@/components/RangePanel";
 import { Dot } from "@/components/Bits";
 import { chColor } from "@/components/theme";
 import { IconCoin, IconUsers, IconTag } from "@/components/Icons";
@@ -17,6 +19,13 @@ export default async function PaidChannelPage() {
   const totalCvs = rows.reduce((a, r) => a + r.cvs, 0);
   const blended = totalCvs > 0 ? totalSpendVnd / totalCvs : 0;
   const barData = rows.map((r) => ({ label: r.label, spendVnd: r.spendVnd, color: chColor(r.channel) }));
+
+  // Dữ liệu gọn cho khu vực chọn-range (tính lại ở client khi đổi ngày).
+  const metaLite = d.meta.map((m) => ({ date: m.date, spend: m.spend, leads: m.leads }));
+  const cvLite = d.cvs.filter((c) => c.date).map((c) => ({ date: c.date, ch: classifySource(c.source) }));
+  const vnNow = new Date(Date.now() + 7 * 3600 * 1000); // giờ VN (UTC+7)
+  const defTo = vnNow.toISOString().slice(0, 10);
+  const defFrom = `${vnNow.getUTCFullYear()}-${String(vnNow.getUTCMonth() + 1).padStart(2, "0")}-01`;
 
   return (
     <>
@@ -51,6 +60,8 @@ export default async function PaidChannelPage() {
           </div>
         ))}
       </section>
+
+      <RangePanel jobSlots={d.jobSlots} meta={metaLite} cvs={cvLite} defaultFrom={defFrom} defaultTo={defTo} />
 
       <section className="card p-6">
         <h2 className="font-display text-lg font-bold text-ink">Chi phí theo kênh</h2>
