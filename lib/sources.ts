@@ -17,6 +17,7 @@ export const SOURCE_TO_CHANNEL: Record<string, Channel> = {
   "it-viec-manual": "itviec",
   "top-dev": "topdev",             // TopDev có tính phí
   linkedin: "linkedin",            // ứng viên LinkedIn paid
+  "landing-page_linkedin": "linkedin", // landing-page có utm=linkedin -> LinkedIn paid
   // free / organic / social / owned
   "landing-page": "free",          // direct
   "landing-page_meta_social": "free",
@@ -30,6 +31,7 @@ export const SOURCE_TO_CHANNEL: Record<string, Channel> = {
   ybox: "free",
   "jobs-go": "free",
   fyi: "free",
+  linkedin_free_manual: "free", // CV LinkedIn free do ngoại lệ nhập tay (xem lib/overrides.ts)
 };
 
 export const META_PAID_SOURCE = "landing-page_meta";

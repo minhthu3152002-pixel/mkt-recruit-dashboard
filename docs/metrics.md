@@ -16,6 +16,11 @@
 - **CPL Meta (range)** = tổng Spend trong range ÷ tổng Leads trong range.
   - Nguồn: `raw-data` (có Date + Spend + Leads mỗi dòng) → cắt range chuẩn.
 - **Cost/CV (range) theo JD** = chi phí paid phát sinh trong range ÷ CV thu trong range.
+- **Cost job-board (range) — ITviec / LinkedIn / TopDev**: RẢI ĐỀU cost mỗi job ra số ngày chạy rồi chỉ tính phần ngày trong range.
+  - Mỗi job có `cost`, `Từ ngày`, `Đến ngày` (linkedin: F/G; it-viec/top-dev: C/D). `costPerDay = cost / (Đến − Từ + 1)` (tính cả 2 đầu).
+  - Với range [from, to]: `overlap = max(0, min(to, Đến) − max(from, Từ) + 1)`; cost trong range của job = `costPerDay × overlap`. Tổng kênh = cộng tất cả job.
+  - **Fallback** (thiếu Đến ngày / Đến < Từ / số ngày ≤ 0): gán TRỌN cost vào tháng hiệu lực, chỉ tính nếu tháng đó giao range (không rải). overlap âm → 0, không bao giờ chia cho 0.
+  - Code: `jobSlotCostInRange` / `channelCostInRange` trong `lib/metrics.ts`. **CHỈ dùng cho khu vực chọn-range**; overview toàn timeline vẫn cộng trọn cost (không rải).
 
 ## Quy ước
 - Tiền song song KRW/VND; quy đổi khi gộp bằng `NEXT_PUBLIC_KRW_TO_VND`.

@@ -1,33 +1,46 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { IconDashboard, IconJd, IconBudget, IconCalendarDays } from "./Icons";
 
 const NAV = [
-  { href: "/", label: "Paid channel", icon: "ti-speakerphone" },
-  { href: "/jd", label: "CV theo JD", icon: "ti-file-cv" },
-  { href: "/budget", label: "Budget theo tháng", icon: "ti-calendar-dollar" },
+  { href: "/", label: "Paid channel", Icon: IconDashboard },
+  { href: "/jd", label: "Cost per CV by JD", Icon: IconJd },
+  { href: "/budget", label: "Budget theo tháng", Icon: IconBudget },
+  { href: "/daily", label: "Daily CV Tracking by JD", Icon: IconCalendarDays },
 ];
 
 export function Sidebar() {
   const path = usePathname();
   return (
-    <aside className="hidden w-60 shrink-0 flex-col bg-ink px-4 py-6 text-white/80 md:flex">
-      <div className="mb-8 flex items-center gap-2 px-2">
-        <div className="grid h-9 w-9 place-items-center rounded-xl bg-brand font-display text-lg font-bold text-white">R</div>
-        <span className="font-display text-lg font-bold text-white">Recruit</span>
+    <aside className="hidden w-64 shrink-0 flex-col bg-white px-4 py-6 md:flex">
+      <div className="mb-9 flex items-center gap-2.5 px-3">
+        <div className="grid h-9 w-9 place-items-center rounded-xl bg-pink font-display text-lg font-extrabold text-white shadow-pill">R</div>
+        <span className="font-display text-xl font-extrabold tracking-tight text-ink">Recruit</span>
       </div>
-      <nav className="space-y-1">
-        {NAV.map((n) => {
-          const active = path === n.href;
+
+      <nav className="space-y-1.5">
+        {NAV.map(({ href, label, Icon }) => {
+          const active = path === href;
           return (
-            <Link key={n.href} href={n.href}
-              className={`block rounded-lg px-3 py-2 text-sm transition ${active ? "bg-brand text-white" : "hover:bg-white/5"}`}>
-              {n.label}
+            <Link
+              key={href}
+              href={href}
+              className={`flex items-center gap-3 rounded-full px-4 py-3 text-sm font-semibold transition ${
+                active ? "bg-pink text-white shadow-pill" : "text-muted hover:bg-black/[0.035] hover:text-ink"
+              }`}
+            >
+              <Icon />
+              {label}
             </Link>
           );
         })}
       </nav>
-      <div className="mt-auto px-3 pt-8 text-[11px] text-white/30">Recruit Dashboard · 2026</div>
+
+      <div className="mt-auto rounded-2xl bg-gradient-to-b from-pink-soft to-blue-soft p-4 text-center">
+        <div className="font-display text-lg font-extrabold text-ink">Recruit<span className="text-pink">·</span>KTC</div>
+        <p className="mt-1 text-[11px] leading-relaxed text-muted">Chi phí &amp; CV theo kênh — cập nhật trực tiếp từ Google Sheets.</p>
+      </div>
     </aside>
   );
 }

@@ -3,35 +3,50 @@
 @tailwind utilities;
 
 :root {
-  --canvas: #f6f5f2;
-  --font-display: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --canvas: #f4f5f7;
+  --font-body: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
 }
 
 html,
 body {
   background: var(--canvas);
-  color: #14131b;
+  color: #171622;
   -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
+/* Thẻ trắng bo góc lớn + đổ bóng nhẹ */
 .card {
-  @apply rounded-2xl bg-white border border-black/[0.06] shadow-[0_1px_2px_rgba(20,19,27,0.04)];
+  @apply rounded-2xl bg-white shadow-card;
 }
 
 .eyebrow {
-  @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-black/40;
+  @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
 }
 
 .stat {
-  @apply font-display text-3xl font-bold tracking-tight;
+  @apply font-display text-[26px] font-extrabold leading-none tracking-tight text-ink;
 }
 
+/* badge bo tròn nhỏ */
 .pill {
-  @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold;
+  @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold;
 }
 
-/* thin channel-colored rail on the left of a card */
-.rail {
-  border-left: 3px solid var(--rail, #5b3df5);
+/* progress bar dùng trong bảng */
+.track {
+  @apply h-2 w-full overflow-hidden rounded-full bg-black/[0.06];
+}
+.track > span {
+  @apply block h-full rounded-full;
+}
+
+/* thanh cuộn mảnh */
+*::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(23, 22, 34, 0.14);
+  border-radius: 9999px;
 }

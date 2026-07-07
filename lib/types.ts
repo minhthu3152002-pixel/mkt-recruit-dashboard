@@ -17,9 +17,11 @@ export type MetaSpendRow = {
 };
 
 // 1 job post đã mua (linkedin-paid-jobs / it-viec / top-dev), VND.
+// startDate/endDate = "Từ ngày"/"Đến ngày" (YYYY-MM-DD, "" nếu không đọc được) — dùng cho rải cost theo range.
 export type JobSlotRow = {
   channel: Extract<Channel, "linkedin" | "itviec" | "topdev">;
   jobCode: string; title: string; effectiveDate: string; cost: number;
+  startDate: string; endDate: string;
 };
 
 export type BudgetPlanRow = { month: string; channel: Channel; budget: number };
