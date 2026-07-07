@@ -5,7 +5,7 @@ import type { Channel } from "@/lib/sources";
 import { channelCostInRange, toVnd, fmtVnd, fmtKrw, fmtInt, KRW_TO_VND } from "@/lib/metrics";
 import { KpiCard } from "@/components/KpiCard";
 import { Dot, ChartCard } from "@/components/Bits";
-import { ChannelSpendBar } from "@/components/Charts";
+import { ChannelCostCombo } from "@/components/Charts";
 import { chColor } from "@/components/theme";
 import { IconCoin, IconUsers, IconTag } from "@/components/Icons";
 
@@ -60,9 +60,12 @@ export function RangePanel({
   const cvDelta = prev ? pct(cur.cv, prev.cv) : null;
   const blendedDelta = prev && prev.blended != null && cur.blended != null ? pct(cur.blended, prev.blended) : null;
 
-  // Dữ liệu 2 chart theo range.
-  const barCost = CHANNELS.map((c) => ({ label: c.label, spendVnd: cur.perCost[c.key], color: chColor(c.key) }));
-  const barCpc = CHANNELS.map((c) => ({ label: c.label, spendVnd: cur.perCv[c.key] > 0 ? cur.perCost[c.key] / cur.perCv[c.key] : 0, color: chColor(c.key) }));
+  // Dữ liệu chart gộp (Chi phí + Cost/CV) theo range.
+  const comboData = CHANNELS.map((c) => ({
+    label: c.label,
+    chiphi: cur.perCost[c.key],
+    costcv: cur.perCv[c.key] > 0 ? cur.perCost[c.key] / cur.perCv[c.key] : 0,
+  }));
 
   function stat(key: Ch) {
     if (key === "meta") {
@@ -127,15 +130,10 @@ export function RangePanel({
         })}
       </div>
 
-      {/* 2 chart theo range */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ChartCard title="Chi phí theo kênh" subtitle="Trong khoảng ngày đã chọn (VND-equiv)">
-          <ChannelSpendBar data={barCost} height={230} />
-        </ChartCard>
-        <ChartCard title="Cost/CV theo kênh" subtitle="Chi phí kênh ÷ CV kênh trong range (VND)">
-          <ChannelSpendBar data={barCpc} name="Cost/CV (VND)" height={230} />
-        </ChartCard>
-      </div>
+      {/* chart gộp theo range */}
+      <ChartCard title="Chi phí & Cost/CV theo kênh" subtitle="Trong khoảng ngày đã chọn · cột hồng = chi phí (trục trái) · cột xanh = cost/CV (trục phải)">
+        <ChannelCostCombo data={comboData} height={260} />
+      </ChartCard>
     </section>
   );
 }

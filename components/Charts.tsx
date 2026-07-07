@@ -46,6 +46,25 @@ export function ChannelSpendBar({ data, name = "Chi phí (VND-equiv)", height = 
   );
 }
 
+// Gộp "Chi phí" + "Cost/CV" theo kênh vào 1 chart, 2 trục Y (đơn vị khác nhau).
+// Cột hồng = Chi phí (trục trái) · cột xanh = Cost/CV (trục phải).
+export function ChannelCostCombo({ data, height = 250 }: { data: { label: string; chiphi: number; costcv: number }[]; height?: number }) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <ComposedChart data={data} margin={{ top: 10, right: 4, left: -6, bottom: 0 }} barCategoryGap="28%" barGap={4}>
+        <CartesianGrid {...gridProps} />
+        <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} dy={6} />
+        <YAxis yAxisId="left" tick={axisTick} tickLine={false} axisLine={false} tickFormatter={fmtShort} width={44} />
+        <YAxis yAxisId="right" orientation="right" tick={axisTick} tickLine={false} axisLine={false} tickFormatter={fmtShort} width={44} />
+        <Tooltip cursor={{ fill: "rgba(23,22,34,0.03)" }} content={<ChartTooltip />} />
+        <Legend wrapperStyle={{ fontSize: 12, fontWeight: 600, paddingTop: 8 }} iconType="circle" iconSize={9} />
+        <Bar isAnimationActive={false} yAxisId="left" dataKey="chiphi" name="Chi phí (VND)" fill={PINK} radius={[6, 6, 0, 0]} maxBarSize={30} />
+        <Bar isAnimationActive={false} yAxisId="right" dataKey="costcv" name="Cost/CV (VND)" fill={BLUE} radius={[6, 6, 0, 0]} maxBarSize={30} />
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
 // Tab 3: actual (VND-equiv) chồng theo kênh + đường Plan cong mượt.
 export function MonthlyStack({ data }: { data: Record<string, number | string>[] }) {
   return (

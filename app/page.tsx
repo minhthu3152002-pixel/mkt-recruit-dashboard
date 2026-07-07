@@ -3,7 +3,7 @@ import { paidChannelSummary, fmtVnd, fmtKrw, fmtInt, KRW_TO_VND } from "@/lib/me
 import { classifySource } from "@/lib/sources";
 import { KpiCard } from "@/components/KpiCard";
 import { Header } from "@/components/Header";
-import { ChannelSpendBar } from "@/components/Charts";
+import { ChannelCostCombo } from "@/components/Charts";
 import { RangePanel } from "@/components/RangePanel";
 import { Dot, ChartCard } from "@/components/Bits";
 import { chColor } from "@/components/theme";
@@ -17,8 +17,7 @@ export default async function PaidChannelPage() {
   const totalSpendVnd = rows.reduce((a, r) => a + r.spendVnd, 0);
   const totalCvs = rows.reduce((a, r) => a + r.cvs, 0);
   const blended = totalCvs > 0 ? totalSpendVnd / totalCvs : 0;
-  const barData = rows.map((r) => ({ label: r.label, spendVnd: r.spendVnd, color: chColor(r.channel) }));
-  const cpcData = rows.map((r) => ({ label: r.label, spendVnd: r.costPerCvVnd ?? 0, color: chColor(r.channel) }));
+  const comboData = rows.map((r) => ({ label: r.label, chiphi: r.spendVnd, costcv: r.costPerCvVnd ?? 0 }));
 
   // Dữ liệu gọn cho khu vực chọn-range (tính lại ở client khi đổi ngày).
   const metaLite = d.meta.map((m) => ({ date: m.date, spend: m.spend, leads: m.leads }));
@@ -63,14 +62,9 @@ export default async function PaidChannelPage() {
           ))}
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-2">
-          <ChartCard title="Chi phí theo kênh" subtitle="Quy về VND (Meta gốc là KRW)">
-            <ChannelSpendBar data={barData} height={230} />
-          </ChartCard>
-          <ChartCard title="Cost/CV theo kênh" subtitle="Chi phí kênh ÷ CV kênh (VND)">
-            <ChannelSpendBar data={cpcData} name="Cost/CV (VND)" height={230} />
-          </ChartCard>
-        </div>
+        <ChartCard title="Chi phí & Cost/CV theo kênh" subtitle="Cột hồng = chi phí (trục trái) · cột xanh = cost/CV (trục phải) · VND">
+          <ChannelCostCombo data={comboData} height={260} />
+        </ChartCard>
       </section>
 
       {/* ===== KHUNG THEO KHOẢNG NGÀY ===== */}
