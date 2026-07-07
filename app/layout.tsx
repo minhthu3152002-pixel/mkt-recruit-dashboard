@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { Sidebar } from "@/components/Sidebar";
+import { AppShell } from "@/components/AppShell";
 
 export const metadata: Metadata = {
   title: "Recruit Dashboard",
@@ -19,12 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="font-sans text-ink">
-        <div className="flex min-h-screen bg-canvas">
-          <Sidebar />
-          <main className="min-w-0 flex-1 px-4 py-6 sm:px-7 lg:px-9">
-            <div className="mx-auto max-w-6xl space-y-6">{children}</div>
-          </main>
-        </div>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
