@@ -7,10 +7,10 @@ import { KpiCard } from "@/components/KpiCard";
 import { Dot, ChartCard } from "@/components/Bits";
 import { ChannelCostCombo } from "@/components/Charts";
 import { chColor } from "@/components/theme";
-import { IconCoin, IconUsers, IconTag } from "@/components/Icons";
+import { IconCoin, IconUsers, IconTag, IconJd } from "@/components/Icons";
 
 type LiteMeta = { date: string; spend: number; leads: number };
-type LiteCv = { date: string; ch: Channel };
+type LiteCv = { date: string; ch: Channel; jd: string };
 type Ch = Exclude<Channel, "free">;
 
 const CHANNELS: { key: Ch; label: string; ccy: "KRW" | "VND" }[] = [
@@ -45,7 +45,9 @@ export function RangePanel({
     const perCost: Record<Ch, number> = { meta: toVnd(ma.spend), linkedin: jc.linkedin, itviec: jc.itviec, topdev: jc.topdev };
     const cost = perCost.meta + perCost.linkedin + perCost.itviec + perCost.topdev;
     const cv = perCv.meta + perCv.linkedin + perCv.itviec + perCv.topdev;
-    return { metaKrw: ma.spend, perCost, perCv, cost, cv, blended: cv > 0 ? cost / cv : null };
+    // JD distinct có ≥1 CV kênh trả phí, ngày nộp trong range.
+    const paidJd = new Set(cvs.filter((c) => c.ch !== "free" && c.date >= r.from && c.date <= r.to).map((c) => c.jd)).size;
+    return { metaKrw: ma.spend, perCost, perCv, cost, cv, blended: cv > 0 ? cost / cv : null, paidJd };
   }
 
   const cur = totalsFor({ from, to });
@@ -58,6 +60,7 @@ export function RangePanel({
   const pct = (c: number, p: number) => (p > 0 ? ((c - p) / p) * 100 : null);
   const costDelta = prev ? pct(cur.cost, prev.cost) : null;
   const cvDelta = prev ? pct(cur.cv, prev.cv) : null;
+  const jdDelta = prev ? pct(cur.paidJd, prev.paidJd) : null;
   const blendedDelta = prev && prev.blended != null && cur.blended != null ? pct(cur.blended, prev.blended) : null;
 
   // Dữ liệu chart gộp (Chi phí + Cost/CV) theo range.
@@ -98,15 +101,20 @@ export function RangePanel({
         </div>
       </div>
 
-      {/* 3 thẻ tổng theo range — badge "so với kỳ trước" */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {/* 4 thẻ tổng theo range — badge "so với kỳ trước" */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard surface tone="pink" icon={<IconCoin />} label="Tổng chi phí (VND-equiv)" value={fmtVnd(cur.cost)}
-          sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} delta={costDelta} deltaLabel="so với kỳ trước" deltaLowerIsBetter />
+          sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} delta={costDelta} deltaLabel="so với kỳ trước" deltaNeutral />
         <KpiCard surface tone="blue" icon={<IconUsers />} label="CV từ kênh paid" value={fmtInt(cur.cv)}
           sub="gán theo nguồn" delta={cvDelta} deltaLabel="so với kỳ trước" />
         <KpiCard surface tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={cur.blended != null ? fmtVnd(cur.blended) : "—"}
           sub="chi phí paid ÷ CV paid" delta={blendedDelta} deltaLabel="so với kỳ trước" deltaLowerIsBetter />
+        <KpiCard surface tone="green" icon={<IconJd />} label="Số JD chạy paid" value={fmtInt(cur.paidJd)}
+          sub="JD có CV kênh trả phí" delta={jdDelta} deltaLabel="so với kỳ trước" deltaNeutral />
       </div>
+      <p className="text-[11px] leading-relaxed text-muted">
+        Chi phí tăng/giảm là dữ kiện, không phải tốt/xấu — xem Cost/CV để đánh giá hiệu quả. Số JD chạy paid cho biết quy mô tuyển trong kỳ.
+      </p>
 
       {/* 4 thẻ kênh theo range */}
       <div className="grid gap-4 sm:grid-cols-2">

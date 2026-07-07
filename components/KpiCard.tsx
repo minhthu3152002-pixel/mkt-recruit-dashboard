@@ -6,13 +6,16 @@ import { IconTrendUp, IconTrendDown } from "./Icons";
 // - mặc định TĂNG = tốt (xanh); lowerIsBetter=true thì GIẢM = tốt (vd cost/CV).
 // pct == null -> ẩn hẳn (không đủ dữ liệu để so sánh, KHÔNG bịa số).
 export function DeltaBadge({
-  pct, label = "so với tháng trước", lowerIsBetter = false,
-}: { pct: number | null | undefined; label?: string; lowerIsBetter?: boolean }) {
+  pct, label = "so với tháng trước", lowerIsBetter = false, neutral = false,
+}: { pct: number | null | undefined; label?: string; lowerIsBetter?: boolean; neutral?: boolean }) {
   if (pct == null || !Number.isFinite(pct)) return null;
   const up = pct >= 0;
-  const good = lowerIsBetter ? pct <= 0 : pct >= 0;
+  // neutral: xám, không phán xét tốt/xấu (dùng cho chi phí, quy mô...).
+  const cls = neutral
+    ? "bg-black/[0.06] text-muted"
+    : (lowerIsBetter ? pct <= 0 : pct >= 0) ? "bg-up/10 text-up" : "bg-down/10 text-down";
   return (
-    <span className={`pill ${good ? "bg-up/10 text-up" : "bg-down/10 text-down"}`}>
+    <span className={`pill ${cls}`}>
       {up ? <IconTrendUp /> : <IconTrendDown />}
       {up ? "+" : ""}{pct.toFixed(0)}%
       <span className="font-medium opacity-70">{label}</span>
@@ -29,6 +32,7 @@ export function KpiCard({
   delta,
   deltaLabel,
   deltaLowerIsBetter,
+  deltaNeutral,
   surface,
 }: {
   label: string;
@@ -39,6 +43,7 @@ export function KpiCard({
   delta?: number | null;
   deltaLabel?: string;
   deltaLowerIsBetter?: boolean;
+  deltaNeutral?: boolean;
   surface?: boolean; // dùng khi đặt trong khung trắng lớn -> nền xám nhạt cho nổi
 }) {
   return (
@@ -56,7 +61,7 @@ export function KpiCard({
       </div>
       {(delta != null || sub) && (
         <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1">
-          <DeltaBadge pct={delta ?? null} label={deltaLabel} lowerIsBetter={deltaLowerIsBetter} />
+          <DeltaBadge pct={delta ?? null} label={deltaLabel} lowerIsBetter={deltaLowerIsBetter} neutral={deltaNeutral} />
           {sub && <span className="text-xs text-muted">{sub}</span>}
         </div>
       )}

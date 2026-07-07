@@ -7,7 +7,7 @@ import { ChannelCostCombo } from "@/components/Charts";
 import { RangePanel } from "@/components/RangePanel";
 import { Dot, ChartCard } from "@/components/Bits";
 import { chColor } from "@/components/theme";
-import { IconCoin, IconUsers, IconTag } from "@/components/Icons";
+import { IconCoin, IconUsers, IconTag, IconJd } from "@/components/Icons";
 
 export const revalidate = 600;
 
@@ -18,10 +18,12 @@ export default async function PaidChannelPage() {
   const totalCvs = rows.reduce((a, r) => a + r.cvs, 0);
   const blended = totalCvs > 0 ? totalSpendVnd / totalCvs : 0;
   const comboData = rows.map((r) => ({ label: r.label, chiphi: r.spendVnd, costcv: r.costPerCvVnd ?? 0 }));
+  // Số JD chạy paid (toàn thời gian) = JD distinct có ≥1 CV kênh trả phí.
+  const paidJdAll = new Set(d.cvs.filter((c) => classifySource(c.source) !== "free").map((c) => c.jdCode)).size;
 
   // Dữ liệu gọn cho khu vực chọn-range (tính lại ở client khi đổi ngày).
   const metaLite = d.meta.map((m) => ({ date: m.date, spend: m.spend, leads: m.leads }));
-  const cvLite = d.cvs.filter((c) => c.date).map((c) => ({ date: c.date, ch: classifySource(c.source) }));
+  const cvLite = d.cvs.filter((c) => c.date).map((c) => ({ date: c.date, ch: classifySource(c.source), jd: c.jdCode }));
   const vnNow = new Date(Date.now() + 7 * 3600 * 1000); // giờ VN (UTC+7)
   const defTo = vnNow.toISOString().slice(0, 10);
   const defFrom = `${vnNow.getUTCFullYear()}-${String(vnNow.getUTCMonth() + 1).padStart(2, "0")}-01`;
@@ -37,10 +39,11 @@ export default async function PaidChannelPage() {
           <p className="text-xs text-muted">Toàn bộ thời gian · không phụ thuộc ô chọn ngày</p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard surface tone="pink" icon={<IconCoin />} label="Tổng chi phí (VND-equiv)" value={fmtVnd(totalSpendVnd)} sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} />
           <KpiCard surface tone="blue" icon={<IconUsers />} label="CV từ kênh paid" value={fmtInt(totalCvs)} sub="gán theo nguồn" />
           <KpiCard surface tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={fmtVnd(blended)} sub="chi phí paid ÷ CV paid" />
+          <KpiCard surface tone="green" icon={<IconJd />} label="Số JD chạy paid" value={fmtInt(paidJdAll)} sub="JD có CV kênh trả phí" />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
