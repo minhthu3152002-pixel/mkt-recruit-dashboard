@@ -1,5 +1,7 @@
 import { getDataset } from "@/lib/sheets";
-import { jdMetrics, fmtVnd, fmtKrw, fmtInt } from "@/lib/metrics";
+import { jdMetrics } from "@/lib/metrics";
+import { getLang } from "@/lib/lang";
+import { t, formatMoney, formatInt } from "@/lib/i18n";
 import { KpiCard } from "@/components/KpiCard";
 import { Header } from "@/components/Header";
 import { PopularityBar, ValueBadge } from "@/components/Bits";
@@ -8,6 +10,7 @@ import { IconUsers, IconGauge, IconTag, IconJd } from "@/components/Icons";
 export const revalidate = 600;
 
 export default async function JdPage() {
+  const lang = getLang();
   const d = await getDataset();
   const jds = jdMetrics(d);
   const totalCvs = jds.reduce((a, r) => a + r.totalCvs, 0);
@@ -19,32 +22,32 @@ export default async function JdPage() {
 
   return (
     <>
-      <Header source={d.source} title="Cost per CV by JD" eyebrow="Chi phí & cost/CV cho từng job" />
+      <Header source={d.source} lang={lang} title={t(lang, "jd.title")} eyebrow={t(lang, "jd.eyebrow")} />
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard tone="blue" icon={<IconUsers />} label="Tổng CV" value={fmtInt(totalCvs)} />
-        <KpiCard tone="pink" icon={<IconJd />} label="CV paid" value={fmtInt(totalPaid)} />
-        <KpiCard tone="green" icon={<IconGauge />} label="CV free" value={fmtInt(totalFree)} />
-        <KpiCard tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={fmtVnd(blended)} />
+        <KpiCard tone="blue" icon={<IconUsers />} label={t(lang, "jd.kpi.totalCv")} value={formatInt(totalCvs, lang)} />
+        <KpiCard tone="pink" icon={<IconJd />} label={t(lang, "jd.kpi.cvPaid")} value={formatInt(totalPaid, lang)} />
+        <KpiCard tone="green" icon={<IconGauge />} label={t(lang, "jd.kpi.cvFree")} value={formatInt(totalFree, lang)} />
+        <KpiCard tone="orange" icon={<IconTag />} label={t(lang, "jd.kpi.costPerCv")} value={formatMoney(blended, "VND", lang)} />
       </section>
 
       <div className="card overflow-hidden">
         <div className="px-6 pt-6">
-          <h2 className="font-display text-lg font-bold text-ink">Chi tiết từng JD</h2>
-          <p className="mt-0.5 text-xs text-muted">Tiền = job-slot theo Job code + Meta chia đều · CV từ JD DAILY</p>
+          <h2 className="font-display text-lg font-bold text-ink">{t(lang, "jd.tbl.title")}</h2>
+          <p className="mt-0.5 text-xs text-muted">{t(lang, "jd.tbl.sub")}</p>
         </div>
         <div className="mt-4 overflow-x-auto">
           <table className="w-full min-w-[880px] text-sm">
             <thead>
               <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-muted">
                 <th className="w-8 px-6 py-2">#</th>
-                <th className="px-3 py-2">JD</th>
-                <th className="px-3 py-2 w-[26%]">Lượng CV</th>
-                <th className="px-3 py-2 text-right">Paid</th>
-                <th className="px-3 py-2 text-right">Free</th>
-                <th className="px-3 py-2 text-right">Job-slot</th>
-                <th className="px-3 py-2 text-right">Meta</th>
-                <th className="px-6 py-2 text-right">Cost/CV</th>
+                <th className="px-3 py-2">{t(lang, "jd.col.jd")}</th>
+                <th className="px-3 py-2 w-[26%]">{t(lang, "jd.col.cvVol")}</th>
+                <th className="px-3 py-2 text-right">{t(lang, "jd.col.paid")}</th>
+                <th className="px-3 py-2 text-right">{t(lang, "jd.col.free")}</th>
+                <th className="px-3 py-2 text-right">{t(lang, "jd.col.jobslot")}</th>
+                <th className="px-3 py-2 text-right">{t(lang, "jd.col.meta")}</th>
+                <th className="px-6 py-2 text-right">{t(lang, "jd.col.costcv")}</th>
               </tr>
             </thead>
             <tbody>
@@ -58,20 +61,20 @@ export default async function JdPage() {
                   <td className="px-3 py-3.5">
                     <div className="flex items-center gap-3">
                       <PopularityBar value={j.totalCvs / maxCvs} color={j.cvPaid >= j.cvFree ? "#ec2c69" : "#2f6bff"} />
-                      <span className="w-10 shrink-0 text-right font-semibold tabular-nums text-ink">{fmtInt(j.totalCvs)}</span>
+                      <span className="w-10 shrink-0 text-right font-semibold tabular-nums text-ink">{formatInt(j.totalCvs, lang)}</span>
                     </div>
                   </td>
-                  <td className="px-3 py-3.5 text-right tabular-nums text-muted">{fmtInt(j.cvPaid)}</td>
-                  <td className="px-3 py-3.5 text-right tabular-nums text-free">{fmtInt(j.cvFree)}</td>
-                  <td className="px-3 py-3.5 text-right tabular-nums text-muted">{j.jobSlotVnd > 0 ? fmtVnd(j.jobSlotVnd) : "—"}</td>
-                  <td className="px-3 py-3.5 text-right tabular-nums text-muted">{j.metaKRW > 0 ? fmtKrw(j.metaKRW) : "—"}</td>
+                  <td className="px-3 py-3.5 text-right tabular-nums text-muted">{formatInt(j.cvPaid, lang)}</td>
+                  <td className="px-3 py-3.5 text-right tabular-nums text-free">{formatInt(j.cvFree, lang)}</td>
+                  <td className="px-3 py-3.5 text-right tabular-nums text-muted">{j.jobSlotVnd > 0 ? formatMoney(j.jobSlotVnd, "VND", lang) : "—"}</td>
+                  <td className="px-3 py-3.5 text-right tabular-nums text-muted">{j.metaKRW > 0 ? formatMoney(j.metaKRW, "KRW", lang) : "—"}</td>
                   <td className="px-6 py-3.5 text-right">
                     {j.costPerCvVnd ? (
-                      <ValueBadge tone="pink">{fmtVnd(j.costPerCvVnd)}</ValueBadge>
+                      <ValueBadge tone="pink">{formatMoney(j.costPerCvVnd, "VND", lang)}</ValueBadge>
                     ) : j.cvPaid > 0 ? (
-                      <ValueBadge tone="warn">đang cập nhật giá</ValueBadge>
+                      <ValueBadge tone="warn">{t(lang, "jd.badge.updating")}</ValueBadge>
                     ) : (
-                      <ValueBadge tone="green">miễn phí</ValueBadge>
+                      <ValueBadge tone="green">{t(lang, "jd.badge.free")}</ValueBadge>
                     )}
                   </td>
                 </tr>
@@ -81,10 +84,10 @@ export default async function JdPage() {
         </div>
       </div>
       <div className="space-y-1 px-1 text-xs text-muted">
-        <p>Cost/CV = (job-slot theo Job code + phần Meta chia đều, quy đổi VND) ÷ tổng CV của JD.</p>
+        <p>{t(lang, "jd.foot1")}</p>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <ValueBadge tone="green">miễn phí</ValueBadge> chỉ có CV từ kênh không tốn phí ·
-          <ValueBadge tone="warn">đang cập nhật giá</ValueBadge> có CV kênh trả phí (Meta/LinkedIn/ITviec/TopDev) nhưng chưa nhập giá vào sheet Marketing.
+          <ValueBadge tone="green">{t(lang, "jd.badge.free")}</ValueBadge> {t(lang, "jd.foot.free")} ·
+          <ValueBadge tone="warn">{t(lang, "jd.badge.updating")}</ValueBadge> {t(lang, "jd.foot.updating")}
         </p>
       </div>
     </>

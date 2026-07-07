@@ -1,10 +1,13 @@
 import { getDataset } from "@/lib/sheets";
+import { getLang } from "@/lib/lang";
+import { t } from "@/lib/i18n";
 import { Header } from "@/components/Header";
 import { DailyPanel } from "@/components/DailyPanel";
 
 export const revalidate = 600;
 
 export default async function DailyPage() {
+  const lang = getLang();
   const d = await getDataset();
 
   // CV thô có ngày -> {jd, d (ngày nộp), s (source)}. Tính bảng ở client khi đổi range.
@@ -24,8 +27,8 @@ export default async function DailyPage() {
 
   return (
     <>
-      <Header source={d.source} title="Daily CV Tracking by JD" eyebrow="CV nhận theo từng ngày · tự tính từ CV thô" />
-      <DailyPanel cvs={cvs} meta={meta} defaultFrom={from} defaultTo={to} />
+      <Header source={d.source} lang={lang} title={t(lang, "daily.title")} eyebrow={t(lang, "daily.eyebrow")} />
+      <DailyPanel lang={lang} cvs={cvs} meta={meta} defaultFrom={from} defaultTo={to} />
     </>
   );
 }

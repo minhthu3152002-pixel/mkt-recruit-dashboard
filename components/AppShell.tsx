@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { IconMenu } from "./Icons";
+import type { Lang } from "@/lib/i18n";
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+export function AppShell({ children, lang }: { children: React.ReactNode; lang: Lang }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -21,7 +22,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-canvas">
-      <Sidebar collapsed={collapsed} onToggle={toggle} mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
+      <Sidebar lang={lang} collapsed={collapsed} onToggle={toggle} mobileOpen={mobileOpen} onCloseMobile={() => setMobileOpen(false)} />
 
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Thanh trên cùng chỉ hiện ở mobile — nút mở drawer */}

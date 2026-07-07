@@ -2,18 +2,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { IconDashboard, IconJd, IconBudget, IconCalendarDays, IconMenu, IconChevronLeft } from "./Icons";
+import { t } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 
 const NAV = [
-  { href: "/", label: "Paid channel", Icon: IconDashboard },
-  { href: "/jd", label: "Cost per CV by JD", Icon: IconJd },
-  { href: "/budget", label: "Monthly Budget", Icon: IconBudget },
-  { href: "/daily", label: "Daily CV Tracking by JD", Icon: IconCalendarDays },
+  { href: "/", key: "nav.paid", Icon: IconDashboard },
+  { href: "/jd", key: "nav.jd", Icon: IconJd },
+  { href: "/budget", key: "nav.budget", Icon: IconBudget },
+  { href: "/daily", key: "nav.daily", Icon: IconCalendarDays },
 ];
 
 export function Sidebar({
-  collapsed, onToggle, mobileOpen, onCloseMobile,
+  lang, collapsed, onToggle, mobileOpen, onCloseMobile,
 }: {
-  collapsed: boolean; onToggle: () => void; mobileOpen: boolean; onCloseMobile: () => void;
+  lang: Lang; collapsed: boolean; onToggle: () => void; mobileOpen: boolean; onCloseMobile: () => void;
 }) {
   const path = usePathname();
   return (
@@ -38,12 +40,13 @@ export function Sidebar({
           aria-label={collapsed ? "Mở rộng sidebar" : "Thu gọn sidebar"}
           className={`mb-5 hidden h-9 items-center gap-2 rounded-xl px-3 text-xs font-semibold text-muted transition hover:bg-black/[0.04] hover:text-ink md:flex ${collapsed ? "md:justify-center md:px-0" : ""}`}
         >
-          {collapsed ? <IconMenu /> : (<><IconChevronLeft /> <span>Thu gọn</span></>)}
+          {collapsed ? <IconMenu /> : (<><IconChevronLeft /> <span>{t(lang, "sidebar.collapse")}</span></>)}
         </button>
 
         <nav className="space-y-1.5">
-          {NAV.map(({ href, label, Icon }) => {
+          {NAV.map(({ href, key, Icon }) => {
             const active = path === href;
+            const label = t(lang, key);
             return (
               <Link
                 key={href}
@@ -63,7 +66,7 @@ export function Sidebar({
 
         <div className={`mt-auto rounded-2xl bg-gradient-to-b from-pink-soft to-blue-soft p-4 text-center ${collapsed ? "md:hidden" : ""}`}>
           <div className="font-display text-base font-extrabold leading-tight text-ink">Marketing Dashboard<span className="text-pink">·</span>KTC</div>
-          <p className="mt-1 text-[11px] leading-relaxed text-muted">Chi phí &amp; CV theo kênh — cập nhật trực tiếp từ Google Sheets.</p>
+          <p className="mt-1 text-[11px] leading-relaxed text-muted">{t(lang, "sidebar.footer")}</p>
           <p className="mt-2 text-[10px] italic text-muted/70">mavis</p>
         </div>
       </aside>

@@ -2,7 +2,9 @@
 import { useState } from "react";
 import type { JobSlotRow } from "@/lib/types";
 import type { Channel } from "@/lib/sources";
-import { channelCostInRange, toVnd, fmtVnd, fmtKrw, fmtInt, KRW_TO_VND } from "@/lib/metrics";
+import { channelCostInRange, toVnd } from "@/lib/metrics";
+import { t, formatMoney, formatInt, moneyLabel, rateNote } from "@/lib/i18n";
+import type { Lang } from "@/lib/i18n";
 import { KpiCard } from "@/components/KpiCard";
 import { Dot, ChartCard } from "@/components/Bits";
 import { ChannelCostCombo } from "@/components/Charts";
@@ -27,9 +29,9 @@ const dayNum = (iso: string) => {
 const isoOf = (d: number) => new Date(d * 86400000).toISOString().slice(0, 10);
 
 export function RangePanel({
-  jobSlots, meta, cvs, defaultFrom, defaultTo,
+  lang, jobSlots, meta, cvs, defaultFrom, defaultTo,
 }: {
-  jobSlots: JobSlotRow[]; meta: LiteMeta[]; cvs: LiteCv[]; defaultFrom: string; defaultTo: string;
+  lang: Lang; jobSlots: JobSlotRow[]; meta: LiteMeta[]; cvs: LiteCv[]; defaultFrom: string; defaultTo: string;
 }) {
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
@@ -81,6 +83,7 @@ export function RangePanel({
     return { ccy: "VND" as const, spend, spendVnd: spend, cv: n, cpc: n > 0 ? spend / n : null };
   }
 
+  const vsPrev = t(lang, "range.vsPrev");
   const inputCls =
     "rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-ink focus:border-pink focus:outline-none focus:ring-2 focus:ring-pink/20";
 
@@ -88,16 +91,16 @@ export function RangePanel({
     <section className="card space-y-5 p-5 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h2 className="font-display text-lg font-bold text-ink">Theo khoảng ngày</h2>
-          <p className="text-xs text-muted">Job-board rải đều cost theo ngày · Meta theo spend/leads · CV theo ngày nộp · badge so với kỳ liền trước cùng độ dài</p>
+          <h2 className="font-display text-lg font-bold text-ink">{t(lang, "range.title")}</h2>
+          <p className="text-xs text-muted">{t(lang, "range.sub")}</p>
         </div>
         <div className="flex items-end gap-3">
           <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            Từ ngày
+            {t(lang, "common.from")}
             <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className={inputCls} />
           </label>
           <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
-            Đến ngày
+            {t(lang, "common.to")}
             <input type="date" value={to} min={from} onChange={(e) => setTo(e.target.value)} className={inputCls} />
           </label>
         </div>
@@ -105,18 +108,16 @@ export function RangePanel({
 
       {/* 4 thẻ tổng theo range — badge "so với kỳ trước" */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard surface tone="pink" icon={<IconCoin />} label="Tổng chi phí (VND-equiv)" value={fmtVnd(cur.cost)}
-          sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} delta={costDelta} deltaLabel="so với kỳ trước" deltaNeutral />
-        <KpiCard surface tone="blue" icon={<IconUsers />} label="CV từ kênh paid" value={fmtInt(cur.cv)}
-          sub="gán theo nguồn" delta={cvDelta} deltaLabel="so với kỳ trước" />
-        <KpiCard surface tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={cur.blended != null ? fmtVnd(cur.blended) : "—"}
-          sub="chi phí paid ÷ CV paid" delta={blendedDelta} deltaLabel="so với kỳ trước" deltaLowerIsBetter />
-        <KpiCard surface tone="green" icon={<IconJd />} label="Số JD chạy paid" value={fmtInt(cur.paidJd)}
-          sub="JD có CV kênh trả phí" delta={jdDelta} deltaLabel="so với kỳ trước" deltaNeutral />
+        <KpiCard surface tone="pink" icon={<IconCoin />} label={`${t(lang, "paid.kpi.totalCost")} (${moneyLabel(lang)})`} value={formatMoney(cur.cost, "VND", lang)}
+          sub={rateNote(lang)} delta={costDelta} deltaLabel={vsPrev} deltaNeutral />
+        <KpiCard surface tone="blue" icon={<IconUsers />} label={t(lang, "paid.kpi.cvPaid")} value={formatInt(cur.cv, lang)}
+          sub={t(lang, "paid.kpi.bySource")} delta={cvDelta} deltaLabel={vsPrev} />
+        <KpiCard surface tone="orange" icon={<IconTag />} label={t(lang, "paid.kpi.costPerCv")} value={cur.blended != null ? formatMoney(cur.blended, "VND", lang) : "—"}
+          sub={t(lang, "paid.kpi.costDivCv")} delta={blendedDelta} deltaLabel={vsPrev} deltaLowerIsBetter />
+        <KpiCard surface tone="green" icon={<IconJd />} label={t(lang, "paid.kpi.paidJd")} value={formatInt(cur.paidJd, lang)}
+          sub={t(lang, "paid.kpi.jdHasPaid")} delta={jdDelta} deltaLabel={vsPrev} deltaNeutral />
       </div>
-      <p className="text-[11px] leading-relaxed text-muted">
-        Chi phí tăng/giảm là dữ kiện, không phải tốt/xấu — xem Cost/CV để đánh giá hiệu quả. Số JD chạy paid cho biết quy mô tuyển trong kỳ.
-      </p>
+      <p className="text-[11px] leading-relaxed text-muted">{t(lang, "range.note")}</p>
 
       {/* 4 thẻ kênh theo range */}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -130,19 +131,20 @@ export function RangePanel({
                 </span>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-                <Metric label="Chi phí" value={s.ccy === "KRW" ? fmtKrw(s.spend) : fmtVnd(s.spend)} sub={s.ccy === "KRW" ? `≈ ${fmtVnd(s.spendVnd)}` : undefined} />
-                <Metric label="CV" value={fmtInt(s.cv)} />
-                <Metric label="Cost/CV" value={s.cpc ? fmtVnd(s.cpc) : "—"} />
+                <Metric label={t(lang, "paid.ch.chiphi")} value={formatMoney(s.spend, s.ccy, lang)}
+                  sub={key === "meta" ? (lang === "vi" ? `= ${formatMoney(s.spend, s.ccy, "ko")}` : `≈ ${formatMoney(s.spend, s.ccy, "vi")}`) : undefined} />
+                <Metric label={t(lang, "paid.ch.cv")} value={formatInt(s.cv, lang)} />
+                <Metric label={t(lang, "paid.ch.costcv")} value={s.cpc ? formatMoney(s.cpc, "VND", lang) : "—"} />
               </div>
-              {key === "meta" && <p className="mt-3 text-[11px] text-muted">CV = lead Meta báo cáo (raw-data-v2)</p>}
+              {key === "meta" && <p className="mt-3 text-[11px] text-muted">{t(lang, "paid.ch.metaNote")}</p>}
             </div>
           );
         })}
       </div>
 
       {/* chart gộp theo range */}
-      <ChartCard title="Chi phí & Cost/CV theo kênh" subtitle="Trong khoảng ngày đã chọn · cột hồng = chi phí (trục trái) · cột xanh = cost/CV (trục phải)">
-        <ChannelCostCombo data={comboData} height={260} />
+      <ChartCard title={t(lang, "range.chart.title")} subtitle={t(lang, "range.chart.sub")}>
+        <ChannelCostCombo data={comboData} height={260} lang={lang} />
       </ChartCard>
     </section>
   );

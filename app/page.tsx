@@ -1,6 +1,8 @@
 import { getDataset } from "@/lib/sheets";
-import { paidChannelSummary, fmtVnd, fmtKrw, fmtInt, KRW_TO_VND } from "@/lib/metrics";
+import { paidChannelSummary } from "@/lib/metrics";
 import { classifySource } from "@/lib/sources";
+import { getLang } from "@/lib/lang";
+import { t, formatMoney, formatInt, moneyLabel, rateNote } from "@/lib/i18n";
 import { KpiCard } from "@/components/KpiCard";
 import { Header } from "@/components/Header";
 import { ChannelCostCombo } from "@/components/Charts";
@@ -12,6 +14,7 @@ import { IconCoin, IconUsers, IconTag, IconJd } from "@/components/Icons";
 export const revalidate = 600;
 
 export default async function PaidChannelPage() {
+  const lang = getLang();
   const d = await getDataset();
   const rows = paidChannelSummary(d);
   const totalSpendVnd = rows.reduce((a, r) => a + r.spendVnd, 0);
@@ -30,20 +33,20 @@ export default async function PaidChannelPage() {
 
   return (
     <>
-      <Header source={d.source} title="Paid channel" eyebrow="Meta · LinkedIn · ITviec · TopDev" />
+      <Header source={d.source} lang={lang} title={t(lang, "paid.title")} eyebrow="Meta · LinkedIn · ITviec · TopDev" />
 
       {/* ===== KHUNG OVERVIEW — toàn bộ thời gian ===== */}
       <section className="card space-y-5 p-5 sm:p-6">
         <div>
-          <h2 className="font-display text-lg font-bold text-ink">Tổng quan</h2>
-          <p className="text-xs text-muted">Toàn bộ thời gian · không phụ thuộc ô chọn ngày</p>
+          <h2 className="font-display text-lg font-bold text-ink">{t(lang, "paid.overview")}</h2>
+          <p className="text-xs text-muted">{t(lang, "paid.overviewSub")}</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <KpiCard surface tone="pink" icon={<IconCoin />} label="Tổng chi phí (VND-equiv)" value={fmtVnd(totalSpendVnd)} sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} />
-          <KpiCard surface tone="blue" icon={<IconUsers />} label="CV từ kênh paid" value={fmtInt(totalCvs)} sub="gán theo nguồn" />
-          <KpiCard surface tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={fmtVnd(blended)} sub="chi phí paid ÷ CV paid" />
-          <KpiCard surface tone="green" icon={<IconJd />} label="Số JD chạy paid" value={fmtInt(paidJdAll)} sub="JD có CV kênh trả phí" />
+          <KpiCard surface tone="pink" icon={<IconCoin />} label={`${t(lang, "paid.kpi.totalCost")} (${moneyLabel(lang)})`} value={formatMoney(totalSpendVnd, "VND", lang)} sub={rateNote(lang)} />
+          <KpiCard surface tone="blue" icon={<IconUsers />} label={t(lang, "paid.kpi.cvPaid")} value={formatInt(totalCvs, lang)} sub={t(lang, "paid.kpi.bySource")} />
+          <KpiCard surface tone="orange" icon={<IconTag />} label={t(lang, "paid.kpi.costPerCv")} value={formatMoney(blended, "VND", lang)} sub={t(lang, "paid.kpi.costDivCv")} />
+          <KpiCard surface tone="green" icon={<IconJd />} label={t(lang, "paid.kpi.paidJd")} value={formatInt(paidJdAll, lang)} sub={t(lang, "paid.kpi.jdHasPaid")} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -53,27 +56,33 @@ export default async function PaidChannelPage() {
                 <span className="flex items-center gap-2 font-display text-lg font-bold text-ink">
                   <Dot color={chColor(r.channel)} /> {r.label}
                 </span>
-                <span className="pill bg-black/[0.05] text-muted">{r.jobs != null ? `${r.jobs} job post` : "ads"}</span>
+                <span className="pill bg-black/[0.05] text-muted">{r.jobs != null ? `${r.jobs} ${t(lang, "paid.ch.jobPost")}` : t(lang, "paid.ch.ads")}</span>
               </div>
               <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-                <Metric label="Chi phí" value={r.ccy === "KRW" ? fmtKrw(r.spend) : fmtVnd(r.spend)} sub={r.ccy === "KRW" ? `≈ ${fmtVnd(r.spendVnd)}` : undefined} />
-                <Metric label="CV" value={fmtInt(r.cvs)} />
-                <Metric label="Cost/CV" value={r.costPerCvVnd ? fmtVnd(r.costPerCvVnd) : "—"} />
+                <Metric label={t(lang, "paid.ch.chiphi")} value={formatMoney(r.spend, r.ccy, lang)} sub={metaSub(r.channel, r.spend, r.ccy, lang)} />
+                <Metric label={t(lang, "paid.ch.cv")} value={formatInt(r.cvs, lang)} />
+                <Metric label={t(lang, "paid.ch.costcv")} value={r.costPerCvVnd ? formatMoney(r.costPerCvVnd, "VND", lang) : "—"} />
               </div>
-              {r.channel === "meta" && <p className="mt-3 text-[11px] text-muted">CV = lead Meta báo cáo (raw-data-v2)</p>}
+              {r.channel === "meta" && <p className="mt-3 text-[11px] text-muted">{t(lang, "paid.ch.metaNote")}</p>}
             </div>
           ))}
         </div>
 
-        <ChartCard title="Chi phí & Cost/CV theo kênh" subtitle="Cột hồng = chi phí (trục trái) · cột xanh = cost/CV (trục phải) · VND">
-          <ChannelCostCombo data={comboData} height={260} />
+        <ChartCard title={t(lang, "paid.chart.title")} subtitle={t(lang, "paid.chart.sub")}>
+          <ChannelCostCombo data={comboData} height={260} lang={lang} />
         </ChartCard>
       </section>
 
       {/* ===== KHUNG THEO KHOẢNG NGÀY ===== */}
-      <RangePanel jobSlots={d.jobSlots} meta={metaLite} cvs={cvLite} defaultFrom={defFrom} defaultTo={defTo} />
+      <RangePanel lang={lang} jobSlots={d.jobSlots} meta={metaLite} cvs={cvLite} defaultFrom={defFrom} defaultTo={defTo} />
     </>
   );
+}
+
+// Meta được bill bằng KRW. Hiển thị thêm dòng đối chiếu đồng tiền còn lại.
+function metaSub(channel: string, spend: number, ccy: "KRW" | "VND", lang: "vi" | "ko") {
+  if (channel !== "meta") return undefined;
+  return lang === "vi" ? `= ${formatMoney(spend, ccy, "ko")}` : `≈ ${formatMoney(spend, ccy, "vi")}`;
 }
 
 function Metric({ label, value, sub }: { label: string; value: string; sub?: string }) {
