@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { google } from "googleapis";
 import { Dataset, CandidateRow, MetaSpendRow, JobSlotRow, BudgetPlanRow } from "./types";
 import { SAMPLE } from "./sample-data";
@@ -13,13 +14,18 @@ function hasCreds() {
   );
 }
 
+// Tạo 1 lần rồi tái dùng -> tránh tạo JWT + token-exchange mỗi read (giảm lỗi/rate-limit).
+let _sheets: ReturnType<typeof google.sheets> | null = null;
 function client() {
-  const auth = new google.auth.JWT({
-    email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-    scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
-  });
-  return google.sheets({ version: "v4", auth });
+  if (!_sheets) {
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
+      key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
+      scopes: ["https://www.googleapis.com/auth/spreadsheets.readonly"],
+    });
+    _sheets = google.sheets({ version: "v4", auth });
+  }
+  return _sheets;
 }
 
 // Tên tab có dấu gạch ngang / khoảng trắng phải bọc trong nháy đơn khi dùng A1 notation.
@@ -172,7 +178,7 @@ export async function debugMarketingTabs() {
   return { hasCreds: true, env, marketingTabs: tabs };
 }
 
-export async function getDataset(): Promise<Dataset> {
+async function loadDataset(): Promise<Dataset> {
   if (!hasCreds()) return SAMPLE;
   const cand = process.env.GOOGLE_CANDIDATE_SHEET_ID as string;
   const mkt = process.env.GOOGLE_MARKETING_SHEET_ID as string;
@@ -198,4 +204,12 @@ export async function getDataset(): Promise<Dataset> {
     console.error("[sheets] read failed, using sample:", err);
     return SAMPLE;
   }
+}
+
+// Dataset dùng chung cho MỌI trang: đọc Sheets 1 lần/chu kỳ -> nguồn (live/sample)
+// NHẤT QUÁN giữa các tab, không để mỗi trang tự đọc rồi lệch nguồn vì rate-limit.
+const _cachedDataset = unstable_cache(loadDataset, ["mkt-dashboard-dataset-v1"], { revalidate: 600 });
+
+export async function getDataset(): Promise<Dataset> {
+  return _cachedDataset();
 }
