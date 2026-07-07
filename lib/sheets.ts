@@ -82,17 +82,21 @@ async function fetchMeta(mktId: string): Promise<MetaSpendRow[]> {
 
 async function fetchLinkedin(mktId: string): Promise<JobSlotRow[]> {
   const rows = await read(mktId, a1("linkedin-paid-jobs", "A2:I5000"));
+  // Từ ngày=F(5), Đến ngày=G(6); effectiveDate vẫn lấy Ngày hiệu lực=C(2) như cũ (overview).
   return rows.filter((r) => r[8]).map((r) => ({
     channel: "linkedin" as const, jobCode: String(r[8]).trim(), title: String(r[3] ?? "").trim(),
     effectiveDate: (parseFlexibleDate(r[2]) || "").slice(0, 7), cost: num(r[7]),
+    startDate: parseFlexibleDate(r[5]), endDate: parseFlexibleDate(r[6]),
   }));
 }
 
 async function fetchJobTab(mktId: string, tab: string, channel: "itviec" | "topdev"): Promise<JobSlotRow[]> {
   const rows = await read(mktId, a1(tab, "A2:G5000"));
+  // Từ ngày=C(2), Đến ngày=D(3), Chi phí=F(5), Job code=G(6).
   return rows.filter((r) => r[6]).map((r) => ({
     channel, jobCode: String(r[6]).trim(), title: String(r[1] ?? "").trim(),
     effectiveDate: (parseFlexibleDate(r[2]) || "").slice(0, 7), cost: num(r[5]),
+    startDate: parseFlexibleDate(r[2]), endDate: parseFlexibleDate(r[3]),
   }));
 }
 

@@ -135,6 +135,50 @@ export function monthOverMonth(d: Dataset): MoM {
   return { spendVnd: pctFromMonthly(spendByMonth), cvs: pctFromMonthly(cvByMonth) };
 }
 
+// ---------- Cost job-board theo RANGE ngày (rải đều cost ra số ngày chạy) ----------
+// CHỈ dùng cho khu vực chọn-range. Overview toàn timeline vẫn cộng trọn cost (không rải).
+export type DateRange = { from: string; to: string }; // "YYYY-MM-DD"
+
+// Đổi "YYYY-MM-DD" -> số ngày (integer), null nếu không hợp lệ.
+function dayNum(iso: string): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+  if (!m) return null;
+  return Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000);
+}
+
+// Cost của 1 job trong range: rải đều cost/ngày rồi nhân số ngày giao với range.
+// Fallback (thiếu Đến ngày / Đến<Từ / số ngày<=0): gán TRỌN cost vào tháng hiệu lực,
+// chỉ tính nếu tháng đó giao range. overlap âm -> 0. Không bao giờ chia cho 0.
+export function jobSlotCostInRange(s: { cost: number; startDate: string; endDate: string; effectiveDate: string }, r: DateRange): number {
+  const from = dayNum(r.from), to = dayNum(r.to);
+  if (from == null || to == null || to < from) return 0;
+
+  const start = dayNum(s.startDate), end = dayNum(s.endDate);
+  const days = start != null && end != null ? end - start + 1 : 0;
+
+  if (start == null || end == null || days <= 0) {
+    // fallback theo tháng hiệu lực
+    const base = start ?? end ?? dayNum((s.effectiveDate || "").slice(0, 7) + "-01");
+    if (base == null) return 0;
+    const dt = new Date(base * 86400000);
+    const mStart = Math.round(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), 1) / 86400000);
+    const mEnd = Math.round(Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth() + 1, 0) / 86400000);
+    const ov = Math.max(0, Math.min(to, mEnd) - Math.max(from, mStart) + 1);
+    return ov > 0 ? s.cost : 0;
+  }
+
+  const perDay = s.cost / days;
+  const overlap = Math.max(0, Math.min(to, end) - Math.max(from, start) + 1);
+  return perDay * overlap;
+}
+
+// Tổng cost từng kênh job-board trong range.
+export function channelCostInRange(jobSlots: Dataset["jobSlots"], r: DateRange): Record<"linkedin" | "itviec" | "topdev", number> {
+  const acc = { linkedin: 0, itviec: 0, topdev: 0 };
+  for (const s of jobSlots) acc[s.channel] += jobSlotCostInRange(s, r);
+  return acc;
+}
+
 // ---------- formatters ----------
 export const fmtVnd = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "₫";
 export const fmtKrw = (n: number) => "₩" + new Intl.NumberFormat("ko-KR").format(Math.round(n));
