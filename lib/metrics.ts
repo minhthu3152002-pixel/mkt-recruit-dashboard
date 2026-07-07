@@ -108,8 +108,8 @@ export function monthlySpend(d: Dataset): MonthChannelSpend[] {
 }
 
 // ---------- formatters ----------
-export const fmtVnd = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "\u20ab";
-export const fmtKrw = (n: number) => "\u20a9" + new Intl.NumberFormat("ko-KR").format(Math.round(n));
+export const fmtVnd = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "₫";
+export const fmtKrw = (n: number) => "₩" + new Intl.NumberFormat("ko-KR").format(Math.round(n));
 export const fmtInt = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n));
 export const monthLabel = (m: string) => "Th" + Number(m.slice(5, 7)) + "/" + m.slice(2, 4);
 export { normalizeSource };

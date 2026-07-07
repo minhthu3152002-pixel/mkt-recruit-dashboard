@@ -27,31 +27,31 @@ export default async function BudgetPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <Header source={d.source} title="Budget theo th\u00e1ng" eyebrow="\u0110\u00e3 s\u00e0i bao nhi\u00eau theo t\u1eebng k\u00eanh" />
+      <Header source={d.source} title="Budget theo tháng" eyebrow="Đã sài bao nhiêu theo từng kênh" />
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <KpiCard label="\u0110\u00e3 chi (VND-equiv)" value={fmtVnd(totalActual)} accent="#5b3df5" />
-        <KpiCard label="K\u1ebf ho\u1ea1ch" value={totalPlan > 0 ? fmtVnd(totalPlan) : "\u2014"} accent="#2563eb" />
-        <KpiCard label="% \u0111\u00e3 d\u00f9ng" value={totalPlan > 0 ? usedPct.toFixed(0) + "%" : "\u2014"} sub="actual \u00f7 plan" accent={usedPct > 100 ? "#e4322b" : "#16a34a"} />
+        <KpiCard label="Đã chi (VND-equiv)" value={fmtVnd(totalActual)} accent="#5b3df5" />
+        <KpiCard label="Kế hoạch" value={totalPlan > 0 ? fmtVnd(totalPlan) : "—"} accent="#2563eb" />
+        <KpiCard label="% đã dùng" value={totalPlan > 0 ? usedPct.toFixed(0) + "%" : "—"} sub="actual ÷ plan" accent={usedPct > 100 ? "#e4322b" : "#16a34a"} />
       </section>
 
       <section className="card p-5">
-        <h2 className="font-display text-lg font-semibold">Actual vs Plan theo th\u00e1ng</h2>
-        <p className="mb-3 text-xs text-black/45">C\u1ed9t m\u00e0u = actual t\u1eebng k\u00eanh (VND-equiv) \u00b7 c\u1ed9t nh\u1ea1t = k\u1ebf ho\u1ea1ch</p>
+        <h2 className="font-display text-lg font-semibold">Actual vs Plan theo tháng</h2>
+        <p className="mb-3 text-xs text-black/45">Cột màu = actual từng kênh (VND-equiv) · cột nhạt = kế hoạch</p>
         <MonthlyStack data={chartData} />
       </section>
 
       <div className="card overflow-hidden">
-        <div className="px-5 pt-5"><h2 className="font-display text-lg font-semibold">Chi ti\u1ebft</h2></div>
+        <div className="px-5 pt-5"><h2 className="font-display text-lg font-semibold">Chi tiết</h2></div>
         <div className="mt-3 overflow-x-auto">
           <table className="w-full min-w-[640px] text-sm">
             <thead>
               <tr className="text-left text-[11px] uppercase tracking-wide text-black/40">
-                <th className="px-5 py-2 font-semibold">Th\u00e1ng</th>
-                <th className="px-3 py-2 font-semibold">K\u00eanh</th>
+                <th className="px-5 py-2 font-semibold">Tháng</th>
+                <th className="px-3 py-2 font-semibold">Kênh</th>
                 <th className="px-3 py-2 text-right font-semibold">Actual</th>
                 <th className="px-3 py-2 text-right font-semibold">Plan</th>
-                <th className="px-5 py-2 text-right font-semibold">% d\u00f9ng</th>
+                <th className="px-5 py-2 text-right font-semibold">% dùng</th>
               </tr>
             </thead>
             <tbody>
@@ -62,9 +62,9 @@ export default async function BudgetPage() {
                     <td className="px-5 py-3">{monthLabel(r.month)}</td>
                     <td className="px-3 py-3">{CHANNEL_META[r.channel].label}</td>
                     <td className="px-3 py-3 text-right tabular-nums">{r.channel === "meta" ? `${fmtKrw(r.actualNative)}` : fmtVnd(r.actualNative)}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-black/50">{r.planVnd > 0 ? fmtVnd(r.planVnd) : "\u2014"}</td>
+                    <td className="px-3 py-3 text-right tabular-nums text-black/50">{r.planVnd > 0 ? fmtVnd(r.planVnd) : "—"}</td>
                     <td className="px-5 py-3 text-right tabular-nums">
-                      {pct != null ? <span className={pct > 100 ? "text-[#e4322b]" : "text-free"}>{pct.toFixed(0)}%</span> : "\u2014"}
+                      {pct != null ? <span className={pct > 100 ? "text-[#e4322b]" : "text-free"}>{pct.toFixed(0)}%</span> : "—"}
                     </td>
                   </tr>
                 );

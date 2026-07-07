@@ -21,14 +21,24 @@ function client() {
   return google.sheets({ version: "v4", auth });
 }
 
+// Tên tab có dấu gạch ngang / khoảng trắng phải bọc trong nháy đơn khi dùng A1 notation.
+const a1 = (tab: string, cells: string) => `'${tab.replace(/'/g, "''")}'!${cells}`;
+
 async function read(spreadsheetId: string, range: string): Promise<any[][]> {
   const res = await client().spreadsheets.values.get({ spreadsheetId, range });
   return (res.data.values as any[][]) ?? [];
 }
 
+// Parse số tiền/đếm: chịu được cả "2,229,120" (phẩy) lẫn "2.229.120" (chấm) ngăn nghìn,
+// đuôi ".0" của số thô, ký hiệu tiền tệ, và giá trị đã là number.
 const num = (v?: any) => {
   if (v == null) return 0;
-  const n = Number(String(v).replace(/[^0-9.-]/g, ""));
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  let s = String(v).trim().replace(/[^\d.,-]/g, "");
+  if (!s) return 0;
+  s = s.replace(/,/g, ""); // phẩy = ngăn nghìn ở dữ liệu này
+  if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ""); // chấm ngăn nghìn -> bỏ
+  const n = Number(s);
   return Number.isFinite(n) ? n : 0;
 };
 
@@ -38,7 +48,7 @@ async function fetchCandidates(candId: string): Promise<CandidateRow[]> {
   for (const cfg of SOURCE_TABS) {
     let rows: any[][];
     try {
-      rows = await read(candId, `${cfg.name}!A${cfg.headerRow + 1}:Z100000`);
+      rows = await read(candId, a1(cfg.name, `A${cfg.headerRow + 1}:Z100000`));
     } catch {
       continue; // tab không tồn tại -> bỏ qua
     }
@@ -61,9 +71,9 @@ async function fetchCandidates(candId: string): Promise<CandidateRow[]> {
   return out;
 }
 
-// ---- Meta spend: raw-data-v2 (KRW). Giả định cột giống raw-data: Date=A, Spend=N, Impr=O, Clicks=P, Leads=R ----
+// ---- Meta spend: raw-data-v2 (KRW). Cột đã đối chiếu thật: Date=A, Spend=N, Impr=O, Clicks=P, Leads=R ----
 async function fetchMeta(mktId: string): Promise<MetaSpendRow[]> {
-  const rows = await read(mktId, "raw-data-v2!A2:R20000");
+  const rows = await read(mktId, a1("raw-data-v2", "A2:R20000"));
   return rows
     .filter((r) => r[0])
     .map((r) => ({ date: parseFlexibleDate(r[0]), spend: num(r[13]), impressions: num(r[14]), clicks: num(r[15]), leads: num(r[17]) }))
@@ -71,7 +81,7 @@ async function fetchMeta(mktId: string): Promise<MetaSpendRow[]> {
 }
 
 async function fetchLinkedin(mktId: string): Promise<JobSlotRow[]> {
-  const rows = await read(mktId, "linkedin-paid-jobs!A2:I5000");
+  const rows = await read(mktId, a1("linkedin-paid-jobs", "A2:I5000"));
   return rows.filter((r) => r[8]).map((r) => ({
     channel: "linkedin" as const, jobCode: String(r[8]).trim(), title: String(r[3] ?? "").trim(),
     effectiveDate: (parseFlexibleDate(r[2]) || "").slice(0, 7), cost: num(r[7]),
@@ -79,7 +89,7 @@ async function fetchLinkedin(mktId: string): Promise<JobSlotRow[]> {
 }
 
 async function fetchJobTab(mktId: string, tab: string, channel: "itviec" | "topdev"): Promise<JobSlotRow[]> {
-  const rows = await read(mktId, `${tab}!A2:G5000`);
+  const rows = await read(mktId, a1(tab, "A2:G5000"));
   return rows.filter((r) => r[6]).map((r) => ({
     channel, jobCode: String(r[6]).trim(), title: String(r[1] ?? "").trim(),
     effectiveDate: (parseFlexibleDate(r[2]) || "").slice(0, 7), cost: num(r[5]),
@@ -88,7 +98,7 @@ async function fetchJobTab(mktId: string, tab: string, channel: "itviec" | "topd
 
 async function fetchPlan(mktId: string): Promise<BudgetPlanRow[]> {
   try {
-    const rows = await read(mktId, "plan!A2:C1000");
+    const rows = await read(mktId, a1("plan", "A2:C1000"));
     const ok = ["meta", "linkedin", "itviec", "topdev", "free"];
     return rows
       .filter((r) => r[0] && ok.includes(String(r[1] ?? "").trim().toLowerCase()))
@@ -98,17 +108,55 @@ async function fetchPlan(mktId: string): Promise<BudgetPlanRow[]> {
   }
 }
 
+// ---- DEBUG: dò dữ liệu thô các tab Marketing (dùng ở /api/debug-sheets) ----
+// Trả về header + vài dòng đầu HOẶC lỗi đọc, để xác nhận đúng cột/tên tab/quyền truy cập.
+export async function debugMarketingTabs() {
+  const env = {
+    GOOGLE_CANDIDATE_SHEET_ID: Boolean(process.env.GOOGLE_CANDIDATE_SHEET_ID),
+    GOOGLE_MARKETING_SHEET_ID: Boolean(process.env.GOOGLE_MARKETING_SHEET_ID),
+    GOOGLE_SERVICE_ACCOUNT_EMAIL: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL ?? null,
+    GOOGLE_PRIVATE_KEY: Boolean(process.env.GOOGLE_PRIVATE_KEY),
+    NEXT_PUBLIC_KRW_TO_VND: process.env.NEXT_PUBLIC_KRW_TO_VND ?? null,
+  };
+  if (!hasCreds()) return { hasCreds: false, env, note: "Thiếu env -> app đang chạy sample-data." };
+
+  const mkt = process.env.GOOGLE_MARKETING_SHEET_ID as string;
+  const probes = [
+    { tab: "raw-data-v2", cells: "A1:U4" },
+    { tab: "linkedin-paid-jobs", cells: "A1:I4" },
+    { tab: "it-viec", cells: "A1:G4" },
+    { tab: "top-dev", cells: "A1:G4" },
+    { tab: "plan", cells: "A1:C4" },
+  ];
+  const tabs = await Promise.all(
+    probes.map(async ({ tab, cells }) => {
+      try {
+        const rows = await read(mkt, a1(tab, cells));
+        return { tab, ok: true, rowCount: rows.length, header: rows[0] ?? [], sampleRows: rows.slice(1) };
+      } catch (e: any) {
+        return { tab, ok: false, error: e?.message ?? String(e) };
+      }
+    })
+  );
+  return { hasCreds: true, env, marketingTabs: tabs };
+}
+
 export async function getDataset(): Promise<Dataset> {
   if (!hasCreds()) return SAMPLE;
   const cand = process.env.GOOGLE_CANDIDATE_SHEET_ID as string;
   const mkt = process.env.GOOGLE_MARKETING_SHEET_ID as string;
   try {
+    // Không nuốt lỗi im lặng: log ra để thấy tab nào đọc hỏng (403/tên tab/ID sai...).
+    const warn = (tab: string) => (e: any) => {
+      console.error(`[sheets] đọc "${tab}" (marketing) hỏng:`, e?.message ?? e);
+      return [] as any[];
+    };
     const [cvs, meta, linkedin, itviec, topdev, plan] = await Promise.all([
       fetchCandidates(cand),
-      fetchMeta(mkt).catch(() => [] as MetaSpendRow[]),
-      fetchLinkedin(mkt).catch(() => [] as JobSlotRow[]),
-      fetchJobTab(mkt, "it-viec", "itviec").catch(() => [] as JobSlotRow[]),
-      fetchJobTab(mkt, "top-dev", "topdev").catch(() => [] as JobSlotRow[]),
+      fetchMeta(mkt).catch(warn("raw-data-v2")) as Promise<MetaSpendRow[]>,
+      fetchLinkedin(mkt).catch(warn("linkedin-paid-jobs")) as Promise<JobSlotRow[]>,
+      fetchJobTab(mkt, "it-viec", "itviec").catch(warn("it-viec")) as Promise<JobSlotRow[]>,
+      fetchJobTab(mkt, "top-dev", "topdev").catch(warn("top-dev")) as Promise<JobSlotRow[]>,
       fetchPlan(mkt),
     ]);
     if (cvs.length === 0) return SAMPLE;

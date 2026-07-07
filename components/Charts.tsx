@@ -2,7 +2,7 @@
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell } from "recharts";
 
 const fmtShort = (n: number) => new Intl.NumberFormat("vi-VN", { notation: "compact" }).format(n);
-const fmtVndFull = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "\u20ab";
+const fmtVndFull = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "₫";
 
 // Tab 1: spend (VND-equiv) theo kênh
 export function ChannelSpendBar({ data }: { data: { label: string; spendVnd: number; color: string }[] }) {

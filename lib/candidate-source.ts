@@ -50,10 +50,24 @@ export function cleanTitle(title: string, code: string): string {
   return t || String(title || "").trim();
 }
 
-// dd/MM/yyyy | MM/dd | yyyy-mm-dd (+ giờ) -> "YYYY-MM-DD" | ""
+// Serial của Google Sheets/Excel (số ngày từ 1899-12-30) -> "YYYY-MM-DD".
+// Cần khi cột ngày được format kiểu "số" -> API trả về "46149" thay vì chuỗi ngày.
+const SHEET_EPOCH = Date.UTC(1899, 11, 30);
+function serialToDate(n: number): string {
+  const dt = new Date(SHEET_EPOCH + Math.round(n) * 86400000);
+  return `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
+}
+
+// dd/MM/yyyy | MM/dd | yyyy-mm-dd (+ giờ) | serial number -> "YYYY-MM-DD" | ""
 export function parseFlexibleDate(raw: any): string {
   const s = String(raw ?? "").trim();
   if (!s) return "";
+  // Serial dạng "46149" / "46149.0" (không có dấu / hoặc -) -> quy đổi.
+  const serial = s.replace(/,/g, "");
+  if (/^\d{4,6}(\.0+)?$/.test(serial)) {
+    const n = Math.trunc(Number(serial));
+    if (n >= 20000 && n <= 90000) return serialToDate(n); // ~1954..2146
+  }
   const m = s.match(/(\d{1,4})\s*[\/\-]\s*(\d{1,2})(?:\s*[\/\-]\s*(\d{2,4}))?/);
   if (!m) return "";
   let a = parseInt(m[1], 10), b = parseInt(m[2], 10);

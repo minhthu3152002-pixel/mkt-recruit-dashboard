@@ -16,12 +16,12 @@ export default async function PaidChannelPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6">
-      <Header source={d.source} title="Paid channel" eyebrow="Meta \u00b7 LinkedIn \u00b7 ITviec \u00b7 TopDev" />
+      <Header source={d.source} title="Paid channel" eyebrow="Meta · LinkedIn · ITviec · TopDev" />
 
       <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <KpiCard label="T\u1ed5ng chi ph\u00ed (VND-equiv)" value={fmtVnd(totalSpendVnd)} sub={`Meta quy \u0111\u1ed5i @${KRW_TO_VND} VND/\u20a9`} accent="#5b3df5" />
-        <KpiCard label="CV t\u1eeb k\u00eanh paid" value={fmtInt(totalCvs)} sub="g\u00e1n theo ngu\u1ed3n" accent="#2563eb" />
-        <KpiCard label="Cost / CV (blended)" value={fmtVnd(blended)} sub="chi ph\u00ed paid \u00f7 CV paid" accent="#e4322b" />
+        <KpiCard label="Tổng chi phí (VND-equiv)" value={fmtVnd(totalSpendVnd)} sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} accent="#5b3df5" />
+        <KpiCard label="CV từ kênh paid" value={fmtInt(totalCvs)} sub="gán theo nguồn" accent="#2563eb" />
+        <KpiCard label="Cost / CV (blended)" value={fmtVnd(blended)} sub="chi phí paid ÷ CV paid" accent="#e4322b" />
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2">
@@ -32,17 +32,17 @@ export default async function PaidChannelPage() {
               <span className="pill bg-black/[0.05] text-black/60">{r.jobs != null ? `${r.jobs} job post` : "ads"}</span>
             </div>
             <div className="mt-3 grid grid-cols-3 gap-2 text-sm">
-              <Metric label="Chi ph\u00ed" value={r.ccy === "KRW" ? fmtKrw(r.spend) : fmtVnd(r.spend)} sub={r.ccy === "KRW" ? `\u2248 ${fmtVnd(r.spendVnd)}` : undefined} />
+              <Metric label="Chi phí" value={r.ccy === "KRW" ? fmtKrw(r.spend) : fmtVnd(r.spend)} sub={r.ccy === "KRW" ? `≈ ${fmtVnd(r.spendVnd)}` : undefined} />
               <Metric label="CV" value={fmtInt(r.cvs)} />
-              <Metric label="Cost/CV" value={r.costPerCvVnd ? fmtVnd(r.costPerCvVnd) : "\u2014"} />
+              <Metric label="Cost/CV" value={r.costPerCvVnd ? fmtVnd(r.costPerCvVnd) : "—"} />
             </div>
           </div>
         ))}
       </section>
 
       <section className="card p-5">
-        <h2 className="font-display text-lg font-semibold">Chi ph\u00ed theo k\u00eanh</h2>
-        <p className="mb-3 text-xs text-black/45">Quy v\u1ec1 VND \u0111\u1ec3 so s\u00e1nh (Meta g\u1ed1c l\u00e0 KRW)</p>
+        <h2 className="font-display text-lg font-semibold">Chi phí theo kênh</h2>
+        <p className="mb-3 text-xs text-black/45">Quy về VND để so sánh (Meta gốc là KRW)</p>
         <ChannelSpendBar data={barData} />
       </section>
     </div>
