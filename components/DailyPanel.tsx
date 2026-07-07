@@ -1,5 +1,5 @@
 "use client";
-import { useState, type CSSProperties } from "react";
+import { useState } from "react";
 import { fmtInt } from "@/lib/metrics";
 
 type Cv = { jd: string; d: string; s: string };
@@ -54,11 +54,10 @@ export function DailyPanel({ cvs, meta, defaultFrom, defaultTo }: { cvs: Cv[]; m
   const totalCum = rows.reduce((a, [, j]) => a + j.cum, 0);
   const totalByDay = days.map((d) => rows.reduce((a, [, j]) => a + (j.daily[d] ?? 0), 0));
 
-  // Heatmap: cường độ nền xanh theo số CV/ngày lớn nhất trong bảng.
-  let maxDaily = 1;
-  for (const [, j] of rows) for (const d of days) if ((j.daily[d] ?? 0) > maxDaily) maxDaily = j.daily[d];
-  const heat = (n: number): CSSProperties | undefined =>
-    n > 0 ? { backgroundColor: `rgba(34,197,94,${(0.08 + 0.32 * Math.min(1, n / maxDaily)).toFixed(3)})` } : undefined;
+  // Line chia cột + zebra cột (KHÔNG heatmap): cột ngày đầu = line nhóm đậm hơn, còn lại line mảnh.
+  const dayDivider = (i: number) => (i === 0 ? "border-l-2 border-black/10" : "border-l border-black/[0.06]");
+  const dayZebra = (i: number) => (i % 2 === 1 ? "bg-[#fafafa]" : "bg-white");
+  const DAY_W = "w-[46px] min-w-[46px]";
 
   const inputCls =
     "rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-ink focus:border-pink focus:outline-none focus:ring-2 focus:ring-pink/20";
@@ -85,16 +84,17 @@ export function DailyPanel({ cvs, meta, defaultFrom, defaultTo }: { cvs: Cv[]; m
         </div>
       </div>
 
-      <div className="max-h-[72vh] overflow-auto rounded-xl border border-black/[0.05]">
+      <div className="max-h-[72vh] overflow-auto rounded-xl border border-black/[0.06]">
         <table className="w-full border-separate border-spacing-0 text-sm">
           <thead>
-            <tr className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-              <th className="sticky left-0 top-0 z-30 border-b border-black/[0.07] bg-white px-4 py-2.5 text-left">JD</th>
-              <th className="sticky top-0 z-20 border-b border-black/[0.07] bg-white px-3 py-2.5 text-right">Tổng tích luỹ</th>
-              {days.map((d) => (
-                <th key={d} className="sticky top-0 z-20 min-w-[46px] border-b border-black/[0.07] bg-white px-2 py-2.5 text-right tabular-nums">{ddmm(d)}</th>
+            {/* HEADER: nền hồng nhạt, chữ đậm vừa, sticky */}
+            <tr className="text-[11px] font-bold uppercase tracking-wide text-ink/70">
+              <th className="sticky left-0 top-0 z-30 border-b border-black/[0.08] bg-pink-soft px-4 py-2.5 text-left">JD</th>
+              <th className="sticky top-0 z-20 border-b border-l border-black/[0.08] bg-pink-soft px-3 py-2.5 text-right">Tổng tích luỹ</th>
+              {days.map((d, i) => (
+                <th key={d} className={`sticky top-0 z-20 ${DAY_W} ${dayDivider(i)} border-b border-black/[0.08] bg-pink-soft px-1 py-2.5 text-center tabular-nums`}>{ddmm(d)}</th>
               ))}
-              <th className="sticky top-0 z-20 border-b border-black/[0.07] bg-white px-4 py-2.5 text-left">Source</th>
+              <th className="sticky top-0 z-20 border-b border-l-2 border-black/10 bg-pink-soft px-4 py-2.5 text-left">Source</th>
             </tr>
           </thead>
           <tbody>
@@ -102,33 +102,37 @@ export function DailyPanel({ cvs, meta, defaultFrom, defaultTo }: { cvs: Cv[]; m
               const m = meta[code] ?? { company: "", title: "" };
               const entries = Object.entries(j.src).sort((a, b) => b[1] - a[1]);
               const isExp = expanded.has(code);
-              const shown = isExp ? entries : entries.slice(0, 3);
-              const rest = entries.length - 3;
+              const shown = isExp ? entries : entries.slice(0, 4);
+              const rest = entries.length - 4;
               const sub = [m.company, m.title].filter(Boolean).join(" · ");
               return (
                 <tr key={code} className="group">
-                  <td className="sticky left-0 z-10 min-w-[210px] border-t border-black/[0.04] bg-white px-4 py-3 group-hover:bg-black/[0.02]">
+                  {/* JD (freeze) */}
+                  <td className="sticky left-0 z-10 min-w-[210px] border-t border-black/[0.05] bg-white px-4 py-3 group-hover:bg-black/[0.025]">
                     <div className="font-semibold text-ink">{code}</div>
                     <div className="max-w-[240px] truncate text-[11px] text-muted">{sub || "—"}</div>
                   </td>
-                  <td className="border-t border-black/[0.04] px-3 py-3 text-right font-semibold tabular-nums text-ink">{fmtInt(j.cum)}</td>
-                  {days.map((d) => {
+                  {/* Tổng tích luỹ: đậm + nền hồng nhạt */}
+                  <td className="border-l border-t border-black/[0.05] bg-pink-soft/60 px-3 py-3 text-right font-bold tabular-nums text-ink group-hover:bg-pink-soft">{fmtInt(j.cum)}</td>
+                  {/* Cột ngày: zebra cột, line chia, 0 -> "·" mờ */}
+                  {days.map((d, i) => {
                     const n = j.daily[d] ?? 0;
                     return (
-                      <td key={d} style={heat(n)} className={`border-t border-black/[0.04] px-2 py-3 text-right tabular-nums ${n ? "font-semibold text-ink" : "text-black/15"}`}>
+                      <td key={d} className={`${DAY_W} ${dayDivider(i)} border-t border-black/[0.05] ${dayZebra(i)} px-1 py-3 text-center tabular-nums ${n ? "font-semibold text-ink" : "text-black/20"}`}>
                         {n || "·"}
                       </td>
                     );
                   })}
-                  <td className="border-t border-black/[0.04] px-4 py-3 align-middle" title={entries.map(([s, n]) => `${s} (${n})`).join(", ")}>
-                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[11px] leading-relaxed text-muted">
+                  {/* Source: mỗi nguồn xuống hàng, chữ nhỏ mờ */}
+                  <td className="border-l-2 border-t border-black/10 px-4 py-3 align-top group-hover:bg-black/[0.015]" title={entries.map(([s, n]) => `${s} (${n})`).join(", ")}>
+                    <div className="flex flex-col gap-0.5 text-[11px] leading-snug text-muted">
                       {shown.map(([s, n]) => (
-                        <span key={s} className="whitespace-nowrap">• {s} <span className="text-ink/70">({n})</span></span>
+                        <span key={s} className="whitespace-nowrap">• {s} <span className="text-ink/55">({n})</span></span>
                       ))}
                       {rest > 0 && (
                         <button
                           onClick={() => toggleSrc(code)}
-                          className="rounded-full bg-black/[0.05] px-2 py-0.5 text-[10px] font-semibold text-ink/60 transition hover:bg-pink-soft hover:text-pink-600"
+                          className="mt-0.5 w-fit rounded-full bg-black/[0.05] px-2 py-0.5 text-[10px] font-semibold text-ink/60 transition hover:bg-pink-soft hover:text-pink-600"
                         >
                           {isExp ? "thu gọn" : `+${rest} nguồn`}
                         </button>
@@ -138,13 +142,14 @@ export function DailyPanel({ cvs, meta, defaultFrom, defaultTo }: { cvs: Cv[]; m
                 </tr>
               );
             })}
+            {/* Dòng TỔNG (sticky bottom) */}
             <tr className="font-bold">
-              <td className="sticky bottom-0 left-0 z-20 border-t-2 border-black/10 bg-canvas px-4 py-3 text-ink">TỔNG</td>
-              <td className="sticky bottom-0 z-10 border-t-2 border-black/10 bg-canvas px-3 py-3 text-right tabular-nums text-ink">{fmtInt(totalCum)}</td>
+              <td className="sticky bottom-0 left-0 z-20 border-t-2 border-black/15 bg-canvas px-4 py-3 text-ink">TỔNG</td>
+              <td className="sticky bottom-0 z-10 border-l border-t-2 border-black/15 bg-canvas px-3 py-3 text-right tabular-nums text-ink">{fmtInt(totalCum)}</td>
               {totalByDay.map((n, i) => (
-                <td key={i} className="sticky bottom-0 z-10 border-t-2 border-black/10 bg-canvas px-2 py-3 text-right tabular-nums text-ink">{n || "·"}</td>
+                <td key={i} className={`sticky bottom-0 z-10 ${DAY_W} ${dayDivider(i)} border-t-2 border-black/15 bg-canvas px-1 py-3 text-center tabular-nums text-ink`}>{n || "·"}</td>
               ))}
-              <td className="sticky bottom-0 z-10 border-t-2 border-black/10 bg-canvas px-4 py-3" />
+              <td className="sticky bottom-0 z-10 border-l-2 border-t-2 border-black/15 bg-canvas px-4 py-3" />
             </tr>
           </tbody>
         </table>
