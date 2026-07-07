@@ -1,15 +1,19 @@
 import { getDataset } from "@/lib/sheets";
-import { monthlySpend, fmtVnd, fmtKrw, monthLabel } from "@/lib/metrics";
+import { monthlySpend, monthOverMonth, fmtVnd, fmtKrw, monthLabel } from "@/lib/metrics";
 import { CHANNEL_META } from "@/lib/sources";
 import { KpiCard } from "@/components/KpiCard";
 import { Header } from "@/components/Header";
 import { MonthlyStack } from "@/components/Charts";
+import { PopularityBar, ValueBadge, Dot } from "@/components/Bits";
+import { chColor } from "@/components/theme";
+import { IconCoin, IconTarget, IconGauge } from "@/components/Icons";
 
 export const revalidate = 600;
 
 export default async function BudgetPage() {
   const d = await getDataset();
   const rows = monthlySpend(d);
+  const mom = monthOverMonth(d);
   const totalActual = rows.reduce((a, r) => a + r.actualVnd, 0);
   const totalPlan = rows.reduce((a, r) => a + r.planVnd, 0);
   const usedPct = totalPlan > 0 ? (totalActual / totalPlan) * 100 : 0;
@@ -26,32 +30,33 @@ export default async function BudgetPage() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <>
       <Header source={d.source} title="Budget theo tháng" eyebrow="Đã sài bao nhiêu theo từng kênh" />
 
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-        <KpiCard label="Đã chi (VND-equiv)" value={fmtVnd(totalActual)} accent="#5b3df5" />
-        <KpiCard label="Kế hoạch" value={totalPlan > 0 ? fmtVnd(totalPlan) : "—"} accent="#2563eb" />
-        <KpiCard label="% đã dùng" value={totalPlan > 0 ? usedPct.toFixed(0) + "%" : "—"} sub="actual ÷ plan" accent={usedPct > 100 ? "#e4322b" : "#16a34a"} />
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <KpiCard tone="pink" icon={<IconCoin />} label="Đã chi (VND-equiv)" value={fmtVnd(totalActual)} delta={mom.spendVnd} />
+        <KpiCard tone="blue" icon={<IconTarget />} label="Kế hoạch" value={totalPlan > 0 ? fmtVnd(totalPlan) : "—"} />
+        <KpiCard tone={usedPct > 100 ? "pink" : "green"} icon={<IconGauge />} label="% đã dùng"
+          value={totalPlan > 0 ? usedPct.toFixed(0) + "%" : "—"} sub={totalPlan > 0 ? "actual ÷ plan" : "chưa có plan"} />
       </section>
 
-      <section className="card p-5">
-        <h2 className="font-display text-lg font-semibold">Actual vs Plan theo tháng</h2>
-        <p className="mb-3 text-xs text-black/45">Cột màu = actual từng kênh (VND-equiv) · cột nhạt = kế hoạch</p>
+      <section className="card p-6">
+        <h2 className="font-display text-lg font-bold text-ink">Actual vs Plan theo tháng</h2>
+        <p className="mb-2 text-xs text-muted">Cột màu = actual từng kênh (VND-equiv) · đường hồng = kế hoạch</p>
         <MonthlyStack data={chartData} />
       </section>
 
       <div className="card overflow-hidden">
-        <div className="px-5 pt-5"><h2 className="font-display text-lg font-semibold">Chi tiết</h2></div>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[640px] text-sm">
+        <div className="px-6 pt-6"><h2 className="font-display text-lg font-bold text-ink">Chi tiết</h2></div>
+        <div className="mt-4 overflow-x-auto">
+          <table className="w-full min-w-[680px] text-sm">
             <thead>
-              <tr className="text-left text-[11px] uppercase tracking-wide text-black/40">
-                <th className="px-5 py-2 font-semibold">Tháng</th>
-                <th className="px-3 py-2 font-semibold">Kênh</th>
-                <th className="px-3 py-2 text-right font-semibold">Actual</th>
-                <th className="px-3 py-2 text-right font-semibold">Plan</th>
-                <th className="px-5 py-2 text-right font-semibold">% dùng</th>
+              <tr className="text-left text-[11px] font-semibold uppercase tracking-wide text-muted">
+                <th className="px-6 py-2">Tháng</th>
+                <th className="px-3 py-2">Kênh</th>
+                <th className="px-3 py-2 text-right">Actual</th>
+                <th className="px-3 py-2 text-right">Plan</th>
+                <th className="px-6 py-2 w-[28%]">% dùng</th>
               </tr>
             </thead>
             <tbody>
@@ -59,12 +64,19 @@ export default async function BudgetPage() {
                 const pct = r.planVnd > 0 ? (r.actualVnd / r.planVnd) * 100 : null;
                 return (
                   <tr key={i} className="border-t border-black/[0.05]">
-                    <td className="px-5 py-3">{monthLabel(r.month)}</td>
-                    <td className="px-3 py-3">{CHANNEL_META[r.channel].label}</td>
-                    <td className="px-3 py-3 text-right tabular-nums">{r.channel === "meta" ? `${fmtKrw(r.actualNative)}` : fmtVnd(r.actualNative)}</td>
-                    <td className="px-3 py-3 text-right tabular-nums text-black/50">{r.planVnd > 0 ? fmtVnd(r.planVnd) : "—"}</td>
-                    <td className="px-5 py-3 text-right tabular-nums">
-                      {pct != null ? <span className={pct > 100 ? "text-[#e4322b]" : "text-free"}>{pct.toFixed(0)}%</span> : "—"}
+                    <td className="px-6 py-3.5 font-medium text-ink">{monthLabel(r.month)}</td>
+                    <td className="px-3 py-3.5">
+                      <span className="flex items-center gap-2 text-ink"><Dot color={chColor(r.channel)} />{CHANNEL_META[r.channel].label}</span>
+                    </td>
+                    <td className="px-3 py-3.5 text-right tabular-nums text-ink">{r.channel === "meta" ? fmtKrw(r.actualNative) : fmtVnd(r.actualNative)}</td>
+                    <td className="px-3 py-3.5 text-right tabular-nums text-muted">{r.planVnd > 0 ? fmtVnd(r.planVnd) : "—"}</td>
+                    <td className="px-6 py-3.5">
+                      {pct != null ? (
+                        <div className="flex items-center gap-3">
+                          <PopularityBar value={pct / 100} color={pct > 100 ? "#ef4444" : "#22c55e"} />
+                          <span className="w-12 shrink-0 text-right"><ValueBadge tone={pct > 100 ? "down" : "up"}>{pct.toFixed(0)}%</ValueBadge></span>
+                        </div>
+                      ) : <span className="text-muted">—</span>}
                     </td>
                   </tr>
                 );
@@ -73,6 +85,6 @@ export default async function BudgetPage() {
           </table>
         </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -110,6 +110,31 @@ export function monthlySpend(d: Dataset): MonthChannelSpend[] {
   return out;
 }
 
+// ---------- So sánh tháng gần nhất vs tháng trước (cho badge KPI) ----------
+// Trả % thay đổi, hoặc null nếu chưa đủ 2 tháng dữ liệu (KHÔNG bịa số).
+export type MoM = { spendVnd: number | null; cvs: number | null };
+
+function pctFromMonthly(byMonth: Map<string, number>): number | null {
+  const months = [...byMonth.keys()].filter(Boolean).sort();
+  if (months.length < 2) return null;
+  const cur = byMonth.get(months[months.length - 1]) ?? 0;
+  const prev = byMonth.get(months[months.length - 2]) ?? 0;
+  if (prev === 0) return null;
+  return ((cur - prev) / prev) * 100;
+}
+
+export function monthOverMonth(d: Dataset): MoM {
+  const spendByMonth = new Map<string, number>();
+  for (const r of monthlySpend(d)) spendByMonth.set(r.month, (spendByMonth.get(r.month) ?? 0) + r.actualVnd);
+
+  const cvByMonth = new Map<string, number>();
+  for (const cv of d.cvs) {
+    const m = cv.date ? monthOf(cv.date) : "";
+    if (m) cvByMonth.set(m, (cvByMonth.get(m) ?? 0) + 1);
+  }
+  return { spendVnd: pctFromMonthly(spendByMonth), cvs: pctFromMonthly(cvByMonth) };
+}
+
 // ---------- formatters ----------
 export const fmtVnd = (n: number) => new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "₫";
 export const fmtKrw = (n: number) => "₩" + new Intl.NumberFormat("ko-KR").format(Math.round(n));
