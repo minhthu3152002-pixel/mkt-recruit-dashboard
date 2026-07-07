@@ -57,7 +57,9 @@ export function RangePanel({
   const len = fromD != null && toD != null && toD >= fromD ? toD - fromD + 1 : 0;
   const prevRange = len > 0 ? { from: isoOf(fromD! - len), to: isoOf(fromD! - 1) } : null;
   const prev = prevRange ? totalsFor(prevRange) : null;
-  const pct = (c: number, p: number) => (p > 0 ? ((c - p) / p) * 100 : null);
+  // Ẩn badge khi kỳ trước quá nhỏ (< 5% kỳ này) -> tránh % vô nghĩa do chia cho số gần 0.
+  const MIN_PREV_RATIO = 0.05;
+  const pct = (c: number, p: number) => (p > 0 && p >= MIN_PREV_RATIO * c ? ((c - p) / p) * 100 : null);
   const costDelta = prev ? pct(cur.cost, prev.cost) : null;
   const cvDelta = prev ? pct(cur.cv, prev.cv) : null;
   const jdDelta = prev ? pct(cur.paidJd, prev.paidJd) : null;
