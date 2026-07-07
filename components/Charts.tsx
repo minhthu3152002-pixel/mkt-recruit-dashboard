@@ -29,16 +29,16 @@ function ChartTooltip({ active, payload, label }: any) {
   );
 }
 
-// Tab 1: spend (VND-equiv) theo kênh — cột bo tròn đầu.
-export function ChannelSpendBar({ data }: { data: { label: string; spendVnd: number; color: string }[] }) {
+// Cột VND theo kênh (bo tròn đầu). Dùng cho cả "Chi phí" lẫn "Cost/CV".
+export function ChannelSpendBar({ data, name = "Chi phí (VND-equiv)", height = 250 }: { data: { label: string; spendVnd: number; color: string }[]; name?: string; height?: number }) {
   return (
-    <ResponsiveContainer width="100%" height={250}>
+    <ResponsiveContainer width="100%" height={height}>
       <BarChart data={data} margin={{ top: 10, right: 8, left: -6, bottom: 0 }} barCategoryGap="35%">
         <CartesianGrid {...gridProps} />
         <XAxis dataKey="label" tick={axisTick} tickLine={false} axisLine={false} dy={6} />
         <YAxis tick={axisTick} tickLine={false} axisLine={false} tickFormatter={fmtShort} width={44} />
         <Tooltip cursor={{ fill: "rgba(23,22,34,0.03)" }} content={<ChartTooltip />} />
-        <Bar isAnimationActive={false} dataKey="spendVnd" name="Chi phí (VND-equiv)" radius={[8, 8, 8, 8]} maxBarSize={54}>
+        <Bar isAnimationActive={false} dataKey="spendVnd" name={name} radius={[8, 8, 8, 8]} maxBarSize={54}>
           {data.map((d, i) => (<Cell key={i} fill={d.color} />))}
         </Bar>
       </BarChart>

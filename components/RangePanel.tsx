@@ -4,19 +4,27 @@ import type { JobSlotRow } from "@/lib/types";
 import type { Channel } from "@/lib/sources";
 import { channelCostInRange, toVnd, fmtVnd, fmtKrw, fmtInt, KRW_TO_VND } from "@/lib/metrics";
 import { KpiCard } from "@/components/KpiCard";
-import { Dot } from "@/components/Bits";
+import { Dot, ChartCard } from "@/components/Bits";
+import { ChannelSpendBar } from "@/components/Charts";
 import { chColor } from "@/components/theme";
 import { IconCoin, IconUsers, IconTag } from "@/components/Icons";
 
 type LiteMeta = { date: string; spend: number; leads: number };
 type LiteCv = { date: string; ch: Channel };
+type Ch = Exclude<Channel, "free">;
 
-const CHANNELS: { key: Exclude<Channel, "free">; label: string; ccy: "KRW" | "VND" }[] = [
+const CHANNELS: { key: Ch; label: string; ccy: "KRW" | "VND" }[] = [
   { key: "meta", label: "Meta Ads", ccy: "KRW" },
   { key: "linkedin", label: "LinkedIn", ccy: "VND" },
   { key: "itviec", label: "ITviec", ccy: "VND" },
   { key: "topdev", label: "TopDev", ccy: "VND" },
 ];
+
+const dayNum = (iso: string) => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || "");
+  return m ? Math.round(Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000) : null;
+};
+const isoOf = (d: number) => new Date(d * 86400000).toISOString().slice(0, 10);
 
 export function RangePanel({
   jobSlots, meta, cvs, defaultFrom, defaultTo,
@@ -26,39 +34,54 @@ export function RangePanel({
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
 
-  const jobCost = channelCostInRange(jobSlots, { from, to });
-  const metaAgg = meta.reduce(
-    (a, m) => (m.date >= from && m.date <= to ? { spend: a.spend + m.spend, leads: a.leads + m.leads } : a),
-    { spend: 0, leads: 0 }
-  );
-  const cvCount = (ch: Channel) => cvs.filter((c) => c.ch === ch && c.date >= from && c.date <= to).length;
-
-  // CV theo kênh trong range (Meta = leads; còn lại = đếm CV theo ngày nộp).
-  const cv = { meta: metaAgg.leads, linkedin: cvCount("linkedin"), itviec: cvCount("itviec"), topdev: cvCount("topdev") };
-
-  function stat(key: Exclude<Channel, "free">) {
-    if (key === "meta") {
-      const spend = metaAgg.spend, spendVnd = toVnd(spend);
-      return { ccy: "KRW" as const, spend, spendVnd, cv: cv.meta, cpc: cv.meta > 0 ? spendVnd / cv.meta : null };
-    }
-    const spend = jobCost[key];
-    return { ccy: "VND" as const, spend, spendVnd: spend, cv: cv[key], cpc: cv[key] > 0 ? spend / cv[key] : null };
+  function totalsFor(r: { from: string; to: string }) {
+    const jc = channelCostInRange(jobSlots, r);
+    const ma = meta.reduce(
+      (a, m) => (m.date >= r.from && m.date <= r.to ? { spend: a.spend + m.spend, leads: a.leads + m.leads } : a),
+      { spend: 0, leads: 0 }
+    );
+    const cvc = (ch: Channel) => cvs.filter((c) => c.ch === ch && c.date >= r.from && c.date <= r.to).length;
+    const perCv: Record<Ch, number> = { meta: ma.leads, linkedin: cvc("linkedin"), itviec: cvc("itviec"), topdev: cvc("topdev") };
+    const perCost: Record<Ch, number> = { meta: toVnd(ma.spend), linkedin: jc.linkedin, itviec: jc.itviec, topdev: jc.topdev };
+    const cost = perCost.meta + perCost.linkedin + perCost.itviec + perCost.topdev;
+    const cv = perCv.meta + perCv.linkedin + perCv.itviec + perCv.topdev;
+    return { metaKrw: ma.spend, perCost, perCv, cost, cv, blended: cv > 0 ? cost / cv : null };
   }
 
-  // 3 thẻ tổng theo range (không badge "so với tháng trước").
-  const totalCost = toVnd(metaAgg.spend) + jobCost.linkedin + jobCost.itviec + jobCost.topdev;
-  const totalCv = cv.meta + cv.linkedin + cv.itviec + cv.topdev;
-  const blended = totalCv > 0 ? totalCost / totalCv : null;
+  const cur = totalsFor({ from, to });
+
+  // Kỳ liền trước cùng độ dài (số ngày) — để so badge %.
+  const fromD = dayNum(from), toD = dayNum(to);
+  const len = fromD != null && toD != null && toD >= fromD ? toD - fromD + 1 : 0;
+  const prevRange = len > 0 ? { from: isoOf(fromD! - len), to: isoOf(fromD! - 1) } : null;
+  const prev = prevRange ? totalsFor(prevRange) : null;
+  const pct = (c: number, p: number) => (p > 0 ? ((c - p) / p) * 100 : null);
+  const costDelta = prev ? pct(cur.cost, prev.cost) : null;
+  const cvDelta = prev ? pct(cur.cv, prev.cv) : null;
+  const blendedDelta = prev && prev.blended != null && cur.blended != null ? pct(cur.blended, prev.blended) : null;
+
+  // Dữ liệu 2 chart theo range.
+  const barCost = CHANNELS.map((c) => ({ label: c.label, spendVnd: cur.perCost[c.key], color: chColor(c.key) }));
+  const barCpc = CHANNELS.map((c) => ({ label: c.label, spendVnd: cur.perCv[c.key] > 0 ? cur.perCost[c.key] / cur.perCv[c.key] : 0, color: chColor(c.key) }));
+
+  function stat(key: Ch) {
+    if (key === "meta") {
+      const spend = cur.metaKrw, spendVnd = cur.perCost.meta, n = cur.perCv.meta;
+      return { ccy: "KRW" as const, spend, spendVnd, cv: n, cpc: n > 0 ? spendVnd / n : null };
+    }
+    const spend = cur.perCost[key], n = cur.perCv[key];
+    return { ccy: "VND" as const, spend, spendVnd: spend, cv: n, cpc: n > 0 ? spend / n : null };
+  }
 
   const inputCls =
     "rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold text-ink focus:border-pink focus:outline-none focus:ring-2 focus:ring-pink/20";
 
   return (
-    <section className="space-y-4">
+    <section className="card space-y-5 p-5 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 className="font-display text-lg font-bold text-ink">Theo khoảng ngày</h2>
-          <p className="text-xs text-muted">Job-board rải đều cost theo ngày · Meta theo spend/leads trong range · CV theo ngày nộp</p>
+          <p className="text-xs text-muted">Job-board rải đều cost theo ngày · Meta theo spend/leads · CV theo ngày nộp · badge so với kỳ liền trước cùng độ dài</p>
         </div>
         <div className="flex items-end gap-3">
           <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
@@ -72,18 +95,22 @@ export function RangePanel({
         </div>
       </div>
 
-      {/* 3 thẻ tổng theo range — cùng design 3 thẻ tổng overview, KHÔNG có badge % */}
+      {/* 3 thẻ tổng theo range — badge "so với kỳ trước" */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <KpiCard tone="pink" icon={<IconCoin />} label="Tổng chi phí (VND-equiv)" value={fmtVnd(totalCost)} sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} />
-        <KpiCard tone="blue" icon={<IconUsers />} label="CV từ kênh paid" value={fmtInt(totalCv)} sub="gán theo nguồn" />
-        <KpiCard tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={blended != null ? fmtVnd(blended) : "—"} sub="chi phí paid ÷ CV paid" />
+        <KpiCard surface tone="pink" icon={<IconCoin />} label="Tổng chi phí (VND-equiv)" value={fmtVnd(cur.cost)}
+          sub={`Meta quy đổi @${KRW_TO_VND} VND/₩`} delta={costDelta} deltaLabel="so với kỳ trước" deltaLowerIsBetter />
+        <KpiCard surface tone="blue" icon={<IconUsers />} label="CV từ kênh paid" value={fmtInt(cur.cv)}
+          sub="gán theo nguồn" delta={cvDelta} deltaLabel="so với kỳ trước" />
+        <KpiCard surface tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={cur.blended != null ? fmtVnd(cur.blended) : "—"}
+          sub="chi phí paid ÷ CV paid" delta={blendedDelta} deltaLabel="so với kỳ trước" deltaLowerIsBetter />
       </div>
 
+      {/* 4 thẻ kênh theo range */}
       <div className="grid gap-4 sm:grid-cols-2">
         {CHANNELS.map(({ key, label }) => {
           const s = stat(key);
           return (
-            <div key={key} className="card p-5">
+            <div key={key} className="rounded-2xl bg-canvas p-5">
               <div className="flex items-center justify-between">
                 <span className="flex items-center gap-2 font-display text-lg font-bold text-ink">
                   <Dot color={chColor(key)} /> {label}
@@ -98,6 +125,16 @@ export function RangePanel({
             </div>
           );
         })}
+      </div>
+
+      {/* 2 chart theo range */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ChartCard title="Chi phí theo kênh" subtitle="Trong khoảng ngày đã chọn (VND-equiv)">
+          <ChannelSpendBar data={barCost} height={230} />
+        </ChartCard>
+        <ChartCard title="Cost/CV theo kênh" subtitle="Chi phí kênh ÷ CV kênh trong range (VND)">
+          <ChannelSpendBar data={barCpc} name="Cost/CV (VND)" height={230} />
+        </ChartCard>
       </div>
     </section>
   );
