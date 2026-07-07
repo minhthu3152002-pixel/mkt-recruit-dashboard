@@ -1,5 +1,5 @@
 import { getDataset } from "@/lib/sheets";
-import { jdMetrics, monthOverMonth, fmtVnd, fmtKrw, fmtInt } from "@/lib/metrics";
+import { jdMetrics, fmtVnd, fmtKrw, fmtInt } from "@/lib/metrics";
 import { KpiCard } from "@/components/KpiCard";
 import { Header } from "@/components/Header";
 import { PopularityBar, ValueBadge } from "@/components/Bits";
@@ -10,7 +10,6 @@ export const revalidate = 600;
 export default async function JdPage() {
   const d = await getDataset();
   const jds = jdMetrics(d);
-  const mom = monthOverMonth(d);
   const totalCvs = jds.reduce((a, r) => a + r.totalCvs, 0);
   const totalPaid = jds.reduce((a, r) => a + r.cvPaid, 0);
   const totalFree = jds.reduce((a, r) => a + r.cvFree, 0);
@@ -23,7 +22,7 @@ export default async function JdPage() {
       <Header source={d.source} title="Cost per CV by JD" eyebrow="Chi phí & cost/CV cho từng job" />
 
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <KpiCard tone="blue" icon={<IconUsers />} label="Tổng CV" value={fmtInt(totalCvs)} delta={mom.cvs} />
+        <KpiCard tone="blue" icon={<IconUsers />} label="Tổng CV" value={fmtInt(totalCvs)} />
         <KpiCard tone="pink" icon={<IconJd />} label="CV paid" value={fmtInt(totalPaid)} />
         <KpiCard tone="green" icon={<IconGauge />} label="CV free" value={fmtInt(totalFree)} />
         <KpiCard tone="orange" icon={<IconTag />} label="Cost / CV (blended)" value={fmtVnd(blended)} />

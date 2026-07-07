@@ -1,5 +1,5 @@
 import { getDataset } from "@/lib/sheets";
-import { monthlySpend, monthOverMonth, fmtVnd, fmtKrw, monthLabel } from "@/lib/metrics";
+import { monthlySpend, fmtVnd, fmtKrw, monthLabel } from "@/lib/metrics";
 import { CHANNEL_META } from "@/lib/sources";
 import { KpiCard } from "@/components/KpiCard";
 import { Header } from "@/components/Header";
@@ -13,7 +13,6 @@ export const revalidate = 600;
 export default async function BudgetPage() {
   const d = await getDataset();
   const rows = monthlySpend(d);
-  const mom = monthOverMonth(d);
   const totalActual = rows.reduce((a, r) => a + r.actualVnd, 0);
   const totalPlan = rows.reduce((a, r) => a + r.planVnd, 0);
   const usedPct = totalPlan > 0 ? (totalActual / totalPlan) * 100 : 0;
@@ -34,7 +33,7 @@ export default async function BudgetPage() {
       <Header source={d.source} title="Monthly Budget" eyebrow="Đã sài bao nhiêu theo từng kênh" />
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <KpiCard tone="pink" icon={<IconCoin />} label="Đã chi (VND-equiv)" value={fmtVnd(totalActual)} delta={mom.spendVnd} />
+        <KpiCard tone="pink" icon={<IconCoin />} label="Đã chi (VND-equiv)" value={fmtVnd(totalActual)} />
         <KpiCard tone="blue" icon={<IconTarget />} label="Kế hoạch" value={totalPlan > 0 ? fmtVnd(totalPlan) : "—"} />
         <KpiCard tone={usedPct > 100 ? "pink" : "green"} icon={<IconGauge />} label="% đã dùng"
           value={totalPlan > 0 ? usedPct.toFixed(0) + "%" : "—"} sub={totalPlan > 0 ? "actual ÷ plan" : "chưa có plan"} />
