@@ -17,6 +17,7 @@ export const SOURCE_TO_CHANNEL: Record<string, Channel> = {
   "it-viec-manual": "itviec",
   "top-dev": "topdev",             // TopDev có tính phí
   linkedin: "linkedin",            // ứng viên LinkedIn paid
+  "landing-page_linkedin": "linkedin", // landing-page có utm=linkedin -> LinkedIn paid
   // free / organic / social / owned
   "landing-page": "free",          // direct
   "landing-page_meta_social": "free",
