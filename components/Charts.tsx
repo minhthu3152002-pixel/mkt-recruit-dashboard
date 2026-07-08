@@ -1,7 +1,7 @@
 "use client";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell,
-  ComposedChart, Line, PieChart, Pie,
+  ComposedChart, Line, PieChart, Pie, LabelList,
 } from "recharts";
 import { PINK, BLUE } from "./theme";
 import { formatMoney, formatInt, moneyLabel, t, KRW_TO_VND } from "@/lib/i18n";
@@ -96,21 +96,28 @@ export function MonthlyStack({ data, lang = "vi" }: { data: Record<string, numbe
 
 // ---- Tab 5: Source Analysis ----
 // Donut LỒNG 2 tầng: vòng trong = Paid/Free, vòng ngoài = group (theo cung Paid/Free).
-// Cung Paid tông hồng (đậm→nhạt theo group), cung Free tông xanh lá.
-const PINK_SHADES = ["#c81e56", "#ec2c69", "#f36f97", "#f8a9c1", "#fcd7e4"];
-const GREEN_SHADES = ["#15803d", "#16a34a", "#22c55e", "#4ade80", "#86efac", "#bbf7d0", "#d5f6df", "#eafaf0"];
+// Cung Paid tông hồng/đỏ, cung Free tông xanh lá — mỗi ramp bước rõ để dễ phân biệt.
+const PINK_SHADES = ["#be123c", "#ec2c69", "#f472a0", "#f9a8c5"];
+const GREEN_SHADES = ["#065f46", "#047857", "#059669", "#10b981", "#34d399", "#6ee7b7", "#a7f3d0", "#d1fae5"];
+const RAD = Math.PI / 180;
 
 type OuterSlice = { group: string; type: "paid" | "free"; cv: number; top: { label: string; cv: number }[] };
 
-export function SourceNestedDonut({ inner, outer, total, lang = "vi", height = 260 }: {
+export function SourceNestedDonut({ inner, outer, total, lang = "vi", height = 300 }: {
   inner: { key: "paid" | "free"; value: number }[];
   outer: OuterSlice[];
   total: number;
   lang?: Lang;
   height?: number;
 }) {
-  const pct = (v: number) => (total > 0 ? ((v / total) * 100).toFixed(1) : "0");
-  // Màu vòng ngoài: đậm→nhạt theo thứ tự group trong từng tier.
+  const ratio = (v: number) => (total > 0 ? (v / total) * 100 : 0);
+  // % gọn: <0.1% (nhưng >0) hiển thị "<0,1%" để không lẫn với 0.
+  const pctLabel = (v: number) => {
+    const r = ratio(v);
+    if (r > 0 && r < 0.1) return "<0,1%";
+    return r.toFixed(1) + "%";
+  };
+  // Màu vòng ngoài: đậm→nhạt theo thứ tự group (đã sắp CV giảm) trong từng tier.
   let pi = 0, gi = 0;
   const outerColored = outer.map((o) => ({
     ...o,
@@ -118,6 +125,21 @@ export function SourceNestedDonut({ inner, outer, total, lang = "vi", height = 2
   }));
   const innerData = inner.map((s) => ({ ...s, color: s.key === "paid" ? PINK : GREEN }));
   const tierName = (type: "paid" | "free") => t(lang, type === "paid" ? "source.paid" : "source.free");
+  const tierCv = (type: "paid" | "free") => inner.find((s) => s.key === type)?.value ?? 0;
+
+  // Nhãn % vẽ thẳng trên cung (đỡ phải hover) — chỉ vẽ khi cung đủ lớn.
+  const arcPct = (min: number) => (p: any) => {
+    const r = (p.percent ?? 0) * 100;
+    if (r < min) return null;
+    const rr = p.innerRadius + (p.outerRadius - p.innerRadius) * 0.5;
+    const x = p.cx + rr * Math.cos(-p.midAngle * RAD);
+    const y = p.cy + rr * Math.sin(-p.midAngle * RAD);
+    return (
+      <text x={x} y={y} fill="#fff" fontSize={11} fontWeight={800} textAnchor="middle" dominantBaseline="central">
+        {Math.round(r)}%
+      </text>
+    );
+  };
 
   const tooltip = ({ active, payload }: any) => {
     if (!active || !payload?.length) return null;
@@ -126,7 +148,7 @@ export function SourceNestedDonut({ inner, outer, total, lang = "vi", height = 2
       return (
         <div className="rounded-xl border border-black/[0.06] bg-white px-3 py-2 text-xs shadow-card">
           <div className="font-semibold text-ink">{p.group} <span className="font-normal text-muted">· {tierName(p.type)}</span></div>
-          <div className="text-muted">{formatInt(p.cv, lang)} CV · {pct(p.cv)}%</div>
+          <div className="text-muted">{formatInt(p.cv, lang)} CV · {pctLabel(p.cv)}</div>
           {p.top?.length ? (
             <div className="mt-1 space-y-0.5 border-t border-black/[0.06] pt-1">
               {p.top.map((s: any, i: number) => (
@@ -140,7 +162,7 @@ export function SourceNestedDonut({ inner, outer, total, lang = "vi", height = 2
     return (
       <div className="rounded-xl border border-black/[0.06] bg-white px-3 py-2 text-xs shadow-card">
         <span className="font-semibold text-ink">{tierName(p.key)}</span>
-        <span className="ml-2 text-muted">{formatInt(p.value, lang)} CV · {pct(p.value)}%</span>
+        <span className="ml-2 text-muted">{formatInt(p.value, lang)} CV · {pctLabel(p.value)}</span>
       </div>
     );
   };
@@ -150,35 +172,40 @@ export function SourceNestedDonut({ inner, outer, total, lang = "vi", height = 2
       <div className="relative">
         <ResponsiveContainer width="100%" height={height}>
           <PieChart>
-            <Pie data={innerData} dataKey="value" nameKey="key" cx="50%" cy="50%" innerRadius={44} outerRadius={70} paddingAngle={1} isAnimationActive={false} stroke="#fff" strokeWidth={1}>
+            <Pie data={innerData} dataKey="value" nameKey="key" cx="50%" cy="50%" innerRadius={52} outerRadius={78} paddingAngle={1.5} isAnimationActive={false} stroke="#fff" strokeWidth={2} label={arcPct(5)} labelLine={false}>
               {innerData.map((d, i) => (<Cell key={i} fill={d.color} />))}
             </Pie>
-            <Pie data={outerColored} dataKey="cv" nameKey="group" cx="50%" cy="50%" innerRadius={74} outerRadius={104} paddingAngle={1} isAnimationActive={false} stroke="#fff" strokeWidth={1}>
+            <Pie data={outerColored} dataKey="cv" nameKey="group" cx="50%" cy="50%" innerRadius={84} outerRadius={116} paddingAngle={1.5} isAnimationActive={false} stroke="#fff" strokeWidth={2} label={arcPct(7)} labelLine={false}>
               {outerColored.map((d, i) => (<Cell key={i} fill={d.color} />))}
             </Pie>
             <Tooltip content={tooltip} />
           </PieChart>
         </ResponsiveContainer>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-xl font-extrabold tabular-nums text-ink">{formatInt(total, lang)}</span>
+          <span className="text-2xl font-extrabold tabular-nums text-ink">{formatInt(total, lang)}</span>
           <span className="text-[10px] font-semibold uppercase tracking-wide text-muted">{t(lang, "source.kpi.totalCv")}</span>
         </div>
       </div>
-      {/* Legend: group tách theo tier để thấy Paid/Free gồm nhóm gì */}
-      <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px]">
+      {/* Legend: tách theo tier, có CV + % để đọc nhanh không cần hover */}
+      <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
         {(["paid", "free"] as const).map((type) => (
-          <div key={type} className="space-y-1">
-            <div className="flex items-center gap-1.5 font-bold text-ink">
-              <span className="h-2.5 w-2.5 rounded-full" style={{ background: type === "paid" ? PINK : GREEN }} />
-              {tierName(type)}
+          <div key={type}>
+            <div className="mb-1.5 flex items-center gap-2 border-b border-black/[0.06] pb-1.5 text-xs font-bold text-ink">
+              <span className="h-3 w-3 rounded-sm" style={{ background: type === "paid" ? PINK : GREEN }} />
+              <span className="flex-1">{tierName(type)}</span>
+              <span className="tabular-nums">{formatInt(tierCv(type), lang)}</span>
+              <span className="w-14 text-right tabular-nums text-muted">{pctLabel(tierCv(type))}</span>
             </div>
-            {outerColored.filter((o) => o.type === type).map((o) => (
-              <div key={o.group} className="flex items-center gap-1.5 pl-4">
-                <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: o.color }} />
-                <span className="truncate text-ink/80">{o.group}</span>
-                <span className="ml-auto tabular-nums text-muted">{pct(o.cv)}%</span>
-              </div>
-            ))}
+            <div className="space-y-1 text-[11px]">
+              {outerColored.filter((o) => o.type === type).map((o) => (
+                <div key={o.group} className="flex items-center gap-2">
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: o.color }} />
+                  <span className="flex-1 truncate text-ink/80">{o.group}</span>
+                  <span className="tabular-nums text-ink/70">{formatInt(o.cv, lang)}</span>
+                  <span className="w-14 text-right tabular-nums text-muted">{pctLabel(o.cv)}</span>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>
@@ -186,14 +213,15 @@ export function SourceNestedDonut({ inner, outer, total, lang = "vi", height = 2
   );
 }
 
-// Bar ngang: top nguồn theo CV, tô màu paid (hồng) / free (xanh lá).
+// Bar ngang: top nguồn theo CV, tô màu paid (hồng) / free (xanh lá). Nhãn số CV ở cuối cột.
 export function SourceTopBar({ data, lang = "vi", height = 320 }: { data: { label: string; cv: number; paid: boolean }[]; lang?: Lang; height?: number }) {
+  const maxCv = data.reduce((m, d) => Math.max(m, d.cv), 0) || 1;
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }} barCategoryGap="26%">
+      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 52, left: 8, bottom: 0 }} barCategoryGap="24%">
         <CartesianGrid strokeDasharray="4 6" stroke="#eef0f3" horizontal={false} />
-        <XAxis type="number" tick={axisTick} tickLine={false} axisLine={false} tickFormatter={(n) => formatInt(n, lang)} />
-        <YAxis type="category" dataKey="label" tick={axisTick} tickLine={false} axisLine={false} width={120} />
+        <XAxis type="number" domain={[0, maxCv * 1.12]} tick={axisTick} tickLine={false} axisLine={false} tickFormatter={(n) => formatInt(n, lang)} />
+        <YAxis type="category" dataKey="label" tick={axisTick} tickLine={false} axisLine={false} width={132} />
         <Tooltip cursor={{ fill: "rgba(23,22,34,0.03)" }} content={({ active, payload, label }: any) => {
           if (!active || !payload?.length) return null;
           return (
@@ -205,6 +233,7 @@ export function SourceTopBar({ data, lang = "vi", height = 320 }: { data: { labe
         }} />
         <Bar isAnimationActive={false} dataKey="cv" radius={[0, 6, 6, 0]} maxBarSize={22}>
           {data.map((d, i) => (<Cell key={i} fill={d.paid ? PINK : GREEN} />))}
+          <LabelList dataKey="cv" position="right" offset={8} fontSize={11} fontWeight={700} fill="#6b6b7e" formatter={(v: number) => formatInt(v, lang)} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>
