@@ -19,6 +19,38 @@ Mỗi dòng CV lấy: JD Code (regex từ codeCol), Company, Title, Ngày (date 
 > landing-page tách chi tiết bằng cột `utm_source` → `landing-page_{utm}`.
 > Sửa phân loại free/paid ở `lib/sources.ts`.
 
+### A.1 Mapping nguồn đầy đủ (tab Source Analysis)
+Nguồn của sự thật: `SOURCE_META` trong `lib/sources.ts` (key = `normalizeSource` = trim + lowercase).
+Mỗi source → `{ channelType, group, label }`. `label` là tên hiển thị (nhiều utm thô có thể gộp chung 1 label).
+`classifySource` (paid/free) NHẤT QUÁN: `channelType === "paid"` ⇔ source thuộc 4 kênh paid trong `SOURCE_TO_CHANNEL`.
+Khớp theo **tên source chính xác** — KHÔNG có logic kiểu "chứa chữ linkedin → paid".
+
+| channelType | group | label | utm/source thô |
+|-------------|-------|-------|----------------|
+| paid | Ads | Meta Ads | `landing-page_meta` |
+| paid | Hiring platform | ITviec | `itviec-api`, `it-viec-manual` |
+| paid | Hiring platform | LinkedIn (paid) | `linkedin`, `landing-page_linkedin` |
+| paid | Hiring platform | TopDev | `top-dev` |
+| free | Direct | Direct landing page | `landing-page` |
+| free | Social media | Facebook/IG | `landing-page_meta_social`, `landing-page_ig`, `landing-page_ig_text_post_permalink`, `landing-page_ig_text_feed_timeline` |
+| free | Social media | LinkedIn (social) | `landing-page_linkedin_social` |
+| free | Social media | Threads | `landing-page_linkedin_threads`, `landing-page_threads` |
+| free | Seeding | Facebook group | `landing-page_fb_group`, `landing-page_fb`, `landing-page_group`, `landing-page_facebook-group` |
+| free | Zalo community | Zalo | `landing-page_zalo`, `landing-page_zalo_group` |
+| free | Hiring platform | Jobsgo | `jobs-go` |
+| free | Hiring platform | Glints | `glint`, `landing-page_glints` |
+| free | Hiring platform | Ybox | `ybox` |
+| free | Hiring platform | FYI | `fyi` |
+| free | Hiring platform | LinkedIn (free job) | `linkedin_free_manual`, `landing-page_linkedin_freejob` |
+| free | Event | Coffee chat | `landing-page_coffeechat` |
+| free | University | VKU | `landing-page_vku` |
+| free | University | HUTECH | `landing-page_hutech` |
+| free | **Other** | *(tên source thô)* | mọi source LẠ chưa map, vd `landing-page_test` (link test nội bộ) |
+
+> Trong tab Source Analysis, group **Other** luôn xếp CUỐI; các group khác sắp theo CV giảm dần.
+> Ở nhóm PAID, group con đặt tên **Hiring platform** cho đồng nhất với group Hiring platform bên Free.
+> Chi phí paid gắn theo `PAID_LABEL_TO_COST_CHANNEL` (Meta Ads→meta, ITviec→itviec, LinkedIn (paid)→linkedin, TopDev→topdev), tính all-time.
+
 ## B. Marketing Activities — `GOOGLE_MARKETING_SHEET_ID`
 Cột ĐÃ ĐỐI CHIẾU với dữ liệu thật (không còn là giả định). Bọc tên tab trong nháy đơn ở A1 notation.
 

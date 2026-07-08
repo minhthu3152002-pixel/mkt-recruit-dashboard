@@ -5,7 +5,7 @@ import { t, formatMoney, formatInt } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 import { KpiCard } from "@/components/KpiCard";
 import { ChartCard } from "@/components/Bits";
-import { PaidFreeDonut, SourceTopBar } from "@/components/Charts";
+import { SourceNestedDonut, SourceTopBar } from "@/components/Charts";
 import { IconUsers, IconJd, IconGauge, IconTag } from "@/components/Icons";
 
 type Cv = { d: string; s: string };
@@ -26,7 +26,7 @@ export function SourcePanel({ lang, cvs, paidCost }: { lang: Lang; cvs: Cv[]; pa
     return ch ? paidCost[ch] : null;
   };
 
-  const { tiers, total, paidCv, freeCv, totalPaidCost, top } = useMemo(() => {
+  const { tiers, total, paidCv, freeCv, totalPaidCost, top, donutInner, donutOuter } = useMemo(() => {
     // Lọc theo range: trống = all-time; có ràng buộc thì chỉ CV có ngày nộp trong khoảng.
     const inRange = (d: string) => {
       if (!from && !to) return true;
@@ -68,7 +68,8 @@ export function SourcePanel({ lang, cvs, paidCost }: { lang: Lang; cvs: Cv[]; pa
         const gcost = type === "paid" ? leaves.reduce((a, x) => a + (x.cost ?? 0), 0) : null;
         groups.push({ group, cv: gcv, cost: gcost, leaves });
       }
-      groups.sort((a, b) => b.cv - a.cv);
+      // Sắp CV giảm dần, riêng "Other" LUÔN ở cuối.
+      groups.sort((a, b) => (a.group === "Other" ? 1 : b.group === "Other" ? -1 : b.cv - a.cv));
       const tcv = groups.reduce((a, x) => a + x.cv, 0);
       const tcost = type === "paid" ? groups.reduce((a, x) => a + (x.cost ?? 0), 0) : null;
       tiers.push({ type, cv: tcv, cost: tcost, groups });
@@ -84,7 +85,15 @@ export function SourcePanel({ lang, cvs, paidCost }: { lang: Lang; cvs: Cv[]; pa
     flat.sort((a, b) => b.cv - a.cv);
     const top = flat.slice(0, 10);
 
-    return { tiers, total, paidCv, freeCv, totalPaidCost, top };
+    // Dữ liệu donut lồng: vòng trong = Paid/Free, vòng ngoài = group (chỉ tới cấp group).
+    const donutInner = [
+      { key: "paid" as ChannelType, value: paidCv },
+      { key: "free" as ChannelType, value: freeCv },
+    ];
+    const donutOuter: { group: string; type: ChannelType; cv: number; top: { label: string; cv: number }[] }[] = [];
+    for (const ti of tiers) for (const gr of ti.groups) donutOuter.push({ group: gr.group, type: ti.type, cv: gr.cv, top: gr.leaves.slice(0, 3).map((l) => ({ label: l.label, cv: l.cv })) });
+
+    return { tiers, total, paidCv, freeCv, totalPaidCost, top, donutInner, donutOuter };
   }, [cvs, from, to, paidCost]);
 
   const pct = (v: number) => (total > 0 ? ((v / total) * 100).toFixed(1) + "%" : "—");
@@ -135,7 +144,7 @@ export function SourcePanel({ lang, cvs, paidCost }: { lang: Lang; cvs: Cv[]; pa
       {/* Charts */}
       <section className="grid gap-4 lg:grid-cols-2">
         <ChartCard title={t(lang, "source.chart.splitTitle")} subtitle={t(lang, "source.chart.splitSub")}>
-          <PaidFreeDonut paid={paidCv} free={freeCv} lang={lang} />
+          <SourceNestedDonut inner={donutInner} outer={donutOuter} total={total} lang={lang} />
         </ChartCard>
         <ChartCard title={t(lang, "source.chart.topTitle")} subtitle={t(lang, "source.chart.topSub")}>
           <SourceTopBar data={top} lang={lang} />

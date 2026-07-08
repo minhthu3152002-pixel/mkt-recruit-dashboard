@@ -134,7 +134,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "source.kpi.paidCostDivCv": "chi phí paid ÷ CV paid",
     "source.metaNote": "Meta ở đây đếm theo nguồn landing-page_meta, khác “lead nền tảng” ở tab Paid channel.",
     "source.chart.splitTitle": "Paid vs Free",
-    "source.chart.splitSub": "Tỷ trọng CV theo loại nguồn",
+    "source.chart.splitSub": "Vòng trong: Paid vs Free · vòng ngoài: nhóm nguồn",
     "source.chart.topTitle": "Top nguồn theo CV",
     "source.chart.topSub": "Top ~10 nguồn (theo nhãn) · hồng = paid, xanh lá = free",
     "source.tbl.title": "Chi tiết 3 tầng: Paid/Free › nhóm › nguồn",
@@ -252,7 +252,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "source.kpi.paidCostDivCv": "유료 비용 ÷ 유료 CV", // KO-REVIEW
     "source.metaNote": "여기서 Meta는 landing-page_meta 소스로 집계하며, Paid channel 탭의 “플랫폼 리드”와 다릅니다.", // KO-REVIEW
     "source.chart.splitTitle": "Paid vs Free",
-    "source.chart.splitSub": "소스 유형별 CV 비중", // KO-REVIEW
+    "source.chart.splitSub": "안쪽 링: Paid vs Free · 바깥 링: 소스 그룹", // KO-REVIEW
     "source.chart.topTitle": "CV 상위 소스", // KO-REVIEW
     "source.chart.topSub": "상위 ~10 소스(라벨 기준) · 분홍 = paid, 초록 = free", // KO-REVIEW
     "source.tbl.title": "3단계 상세: Paid/Free › 그룹 › 소스", // KO-REVIEW

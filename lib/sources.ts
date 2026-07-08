@@ -34,11 +34,15 @@ export const SOURCE_TO_CHANNEL: Record<string, Channel> = {
   "landing-page": "free",
   "landing-page_meta_social": "free",
   "landing-page_ig": "free",
+  "landing-page_ig_text_post_permalink": "free",
+  "landing-page_ig_text_feed_timeline": "free",
   "landing-page_linkedin_social": "free",
   "landing-page_linkedin_threads": "free",
   "landing-page_threads": "free",
   "landing-page_fb_group": "free",
   "landing-page_fb": "free",
+  "landing-page_group": "free",
+  "landing-page_facebook-group": "free",
   "landing-page_zalo": "free",
   "landing-page_zalo_group": "free",
   "jobs-go": "free",
@@ -49,7 +53,10 @@ export const SOURCE_TO_CHANNEL: Record<string, Channel> = {
   "landing-page_coffeechat": "free",
   "landing-page_vku": "free",
   "landing-page_hutech": "free",
-  "linkedin_free_manual": "free",        // ngoại lệ nhập tay (xem lib/overrides.ts)
+  // LinkedIn FREE — khớp theo TÊN CHÍNH XÁC (KHÔNG có logic "chứa 'linkedin' -> paid").
+  "linkedin_free_manual": "free",          // ngoại lệ nhập tay (xem lib/overrides.ts)
+  "landing-page_linkedin_freejob": "free", // LinkedIn đăng job free (không tính phí)
+  // landing-page_test: KHÔNG map -> mặc định "free" + rơi vào group "Other" (link test nội bộ)
 };
 
 // (2) Source -> { channelType, group, label } cho tab Source Analysis.
@@ -65,25 +72,30 @@ export const SOURCE_META: Record<string, SourceMeta> = {
   // ===== FREE =====
   // Direct
   "landing-page": F("Direct", "Direct landing page"),
-  // Social media
+  // Social media (gộp nhãn Facebook/IG cho các utm IG/Meta social)
   "landing-page_meta_social": F("Social media", "Facebook/IG"),
   "landing-page_ig": F("Social media", "Facebook/IG"),
+  "landing-page_ig_text_post_permalink": F("Social media", "Facebook/IG"),
+  "landing-page_ig_text_feed_timeline": F("Social media", "Facebook/IG"),
   "landing-page_linkedin_social": F("Social media", "LinkedIn (social)"),
   "landing-page_linkedin_threads": F("Social media", "Threads"),
   "landing-page_threads": F("Social media", "Threads"),
-  "linkedin_free_manual": F("Social media", "LinkedIn (social)"), // LinkedIn free nhập tay (override)
-  // Seeding
+  // Seeding (gộp nhãn Facebook group cho các utm fb group)
   "landing-page_fb_group": F("Seeding", "Facebook group"),
   "landing-page_fb": F("Seeding", "Facebook group"),
+  "landing-page_group": F("Seeding", "Facebook group"),
+  "landing-page_facebook-group": F("Seeding", "Facebook group"),
   // Zalo community
   "landing-page_zalo": F("Zalo community", "Zalo"),
   "landing-page_zalo_group": F("Zalo community", "Zalo"),
-  // Hiring platform
+  // Hiring platform (bao gồm cả LinkedIn free job)
   "jobs-go": F("Hiring platform", "Jobsgo"),
   "glint": F("Hiring platform", "Glints"),
   "landing-page_glints": F("Hiring platform", "Glints"),
   "ybox": F("Hiring platform", "Ybox"),
   "fyi": F("Hiring platform", "FYI"),
+  "linkedin_free_manual": F("Hiring platform", "LinkedIn (free job)"),        // LinkedIn free nhập tay (override)
+  "landing-page_linkedin_freejob": F("Hiring platform", "LinkedIn (free job)"), // LinkedIn đăng job free
   // Event
   "landing-page_coffeechat": F("Event", "Coffee chat"),
   // University
@@ -93,12 +105,12 @@ export const SOURCE_META: Record<string, SourceMeta> = {
   // ===== PAID =====
   // Ads
   "landing-page_meta": P("Ads", "Meta Ads"),
-  // Job board
-  "itviec-api": P("Job board", "ITviec"),
-  "it-viec-manual": P("Job board", "ITviec"),
-  "linkedin": P("Job board", "LinkedIn (paid)"),
-  "landing-page_linkedin": P("Job board", "LinkedIn (paid)"),
-  "top-dev": P("Job board", "TopDev"),
+  // Hiring platform (đồng nhất tên với group Hiring platform bên Free)
+  "itviec-api": P("Hiring platform", "ITviec"),
+  "it-viec-manual": P("Hiring platform", "ITviec"),
+  "linkedin": P("Hiring platform", "LinkedIn (paid)"),
+  "landing-page_linkedin": P("Hiring platform", "LinkedIn (paid)"),
+  "top-dev": P("Hiring platform", "TopDev"),
 };
 
 // Chi phí paid gắn theo "cost channel" (4 kênh có số tiền). Mỗi label paid ứng 1 kênh
