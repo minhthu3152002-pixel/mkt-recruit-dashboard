@@ -36,6 +36,12 @@ export const IconCalendarDays = ({ className = base }: P) => (
   </svg>
 );
 
+export const IconPie = ({ className = base }: P) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 3a9 9 0 1 0 9 9h-9V3Z" /><path d="M13 3.05A9 9 0 0 1 20.95 11H13V3.05Z" />
+  </svg>
+);
+
 // icon nhỏ trong tròn gradient của thẻ KPI (fill trắng)
 const wbase = "h-5 w-5";
 export const IconCoin = ({ className = wbase }: P) => (

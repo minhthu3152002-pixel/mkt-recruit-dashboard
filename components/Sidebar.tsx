@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { IconDashboard, IconJd, IconBudget, IconCalendarDays, IconMenu, IconChevronLeft } from "./Icons";
+import { IconDashboard, IconJd, IconBudget, IconCalendarDays, IconPie, IconMenu, IconChevronLeft } from "./Icons";
 import { t } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
 
@@ -10,6 +10,7 @@ const NAV = [
   { href: "/jd", key: "nav.jd", Icon: IconJd },
   { href: "/budget", key: "nav.budget", Icon: IconBudget },
   { href: "/daily", key: "nav.daily", Icon: IconCalendarDays },
+  { href: "/source", key: "nav.source", Icon: IconPie },
 ];
 
 export function Sidebar({

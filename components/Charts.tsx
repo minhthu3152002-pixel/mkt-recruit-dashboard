@@ -1,11 +1,13 @@
 "use client";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend, CartesianGrid, Cell,
-  ComposedChart, Line,
+  ComposedChart, Line, PieChart, Pie,
 } from "recharts";
 import { PINK, BLUE } from "./theme";
-import { formatMoney, moneyLabel, t, KRW_TO_VND } from "@/lib/i18n";
+import { formatMoney, formatInt, moneyLabel, t, KRW_TO_VND } from "@/lib/i18n";
 import type { Lang } from "@/lib/i18n";
+
+const GREEN = "#16a34a"; // free / organic
 
 // Giá trị data đều là VND-base. Ở KO đổi sang KRW (÷ tỷ giá) + đổi locale.
 const compact = (n: number, lang: Lang) => {
@@ -88,6 +90,71 @@ export function MonthlyStack({ data, lang = "vi" }: { data: Record<string, numbe
         <Line isAnimationActive={false} type="monotone" dataKey="Plan" name={t(lang, "budget.legend.plan")} stroke={PINK} strokeWidth={3}
           dot={{ r: 3, fill: "#fff", stroke: PINK, strokeWidth: 2 }} activeDot={{ r: 5 }} />
       </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
+// ---- Tab 5: Source Analysis ----
+// Donut Paid vs Free (hồng = paid, xanh lá = free). Tâm hiện tổng CV.
+export function PaidFreeDonut({ paid, free, lang = "vi", height = 220 }: { paid: number; free: number; lang?: Lang; height?: number }) {
+  const total = paid + free;
+  const data = [
+    { key: t(lang, "source.paid"), value: paid, color: PINK },
+    { key: t(lang, "source.free"), value: free, color: GREEN },
+  ];
+  const pct = (v: number) => (total > 0 ? Math.round((v / total) * 100) : 0);
+  return (
+    <div className="relative">
+      <ResponsiveContainer width="100%" height={height}>
+        <PieChart>
+          <Pie data={data} dataKey="value" nameKey="key" cx="50%" cy="50%" innerRadius={62} outerRadius={92} paddingAngle={2} isAnimationActive={false} stroke="none">
+            {data.map((d, i) => (<Cell key={i} fill={d.color} />))}
+          </Pie>
+          <Tooltip content={({ active, payload }: any) => {
+            if (!active || !payload?.length) return null;
+            const p = payload[0];
+            return (
+              <div className="rounded-xl border border-black/[0.06] bg-white px-3 py-2 text-xs shadow-card">
+                <span className="font-semibold text-ink">{p.name}</span>
+                <span className="ml-2 text-muted">{formatInt(p.value, lang)} CV · {pct(p.value)}%</span>
+              </div>
+            );
+          }} />
+        </PieChart>
+      </ResponsiveContainer>
+      <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-2xl font-extrabold tabular-nums text-ink">{formatInt(total, lang)}</span>
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">{t(lang, "source.kpi.totalCv")}</span>
+      </div>
+      <div className="mt-3 flex items-center justify-center gap-5 text-xs font-semibold">
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: PINK }} />{t(lang, "source.paid")} {pct(paid)}%</span>
+        <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full" style={{ background: GREEN }} />{t(lang, "source.free")} {pct(free)}%</span>
+      </div>
+    </div>
+  );
+}
+
+// Bar ngang: top nguồn theo CV, tô màu paid (hồng) / free (xanh lá).
+export function SourceTopBar({ data, lang = "vi", height = 320 }: { data: { label: string; cv: number; paid: boolean }[]; lang?: Lang; height?: number }) {
+  return (
+    <ResponsiveContainer width="100%" height={height}>
+      <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 0 }} barCategoryGap="26%">
+        <CartesianGrid strokeDasharray="4 6" stroke="#eef0f3" horizontal={false} />
+        <XAxis type="number" tick={axisTick} tickLine={false} axisLine={false} tickFormatter={(n) => formatInt(n, lang)} />
+        <YAxis type="category" dataKey="label" tick={axisTick} tickLine={false} axisLine={false} width={120} />
+        <Tooltip cursor={{ fill: "rgba(23,22,34,0.03)" }} content={({ active, payload, label }: any) => {
+          if (!active || !payload?.length) return null;
+          return (
+            <div className="rounded-xl border border-black/[0.06] bg-white px-3 py-2 text-xs shadow-card">
+              <span className="font-semibold text-ink">{label}</span>
+              <span className="ml-2 text-muted">{formatInt(payload[0].value, lang)} CV</span>
+            </div>
+          );
+        }} />
+        <Bar isAnimationActive={false} dataKey="cv" radius={[0, 6, 6, 0]} maxBarSize={22}>
+          {data.map((d, i) => (<Cell key={i} fill={d.paid ? PINK : GREEN} />))}
+        </Bar>
+      </BarChart>
     </ResponsiveContainer>
   );
 }

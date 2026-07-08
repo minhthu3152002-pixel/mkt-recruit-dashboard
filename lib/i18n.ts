@@ -39,6 +39,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "nav.jd": "Cost per CV by JD",
     "nav.budget": "Monthly Budget",
     "nav.daily": "Daily CV Tracking by JD",
+    "nav.source": "Source Analysis",
     "sidebar.footer": "Chi phí & CV theo kênh — cập nhật trực tiếp từ Google Sheets.",
     "sidebar.collapse": "Thu gọn",
     "header.live": "Live từ Google Sheets",
@@ -121,6 +122,33 @@ const DICT: Record<Lang, Record<string, string>> = {
     "daily.col.source": "Source",
     "daily.collapse": "thu gọn",
     "daily.foot": "JD có CV tới ngày “Đến”. Tự tính từ CV thô (Candidate Data) — cùng logic bắt mã JD / parse ngày / gom nguồn như Apps Script JD DAILY.",
+
+    "source.title": "Source Analysis",
+    "source.eyebrow": "CV đến từ đâu · Paid vs Free · theo nhóm & nguồn",
+    "source.kpi.totalCv": "Tổng CV",
+    "source.kpi.paid": "CV Paid",
+    "source.kpi.free": "CV Free",
+    "source.kpi.costPerCvPaid": "Cost/CV nhóm Paid",
+    "source.kpi.ofTotal": "trên tổng CV",
+    "source.kpi.freeIsFree": "miễn phí",
+    "source.kpi.paidCostDivCv": "chi phí paid ÷ CV paid",
+    "source.metaNote": "Meta ở đây đếm theo nguồn landing-page_meta, khác “lead nền tảng” ở tab Paid channel.",
+    "source.chart.splitTitle": "Paid vs Free",
+    "source.chart.splitSub": "Tỷ trọng CV theo loại nguồn",
+    "source.chart.topTitle": "Top nguồn theo CV",
+    "source.chart.topSub": "Top ~10 nguồn (theo nhãn) · hồng = paid, xanh lá = free",
+    "source.tbl.title": "Chi tiết 3 tầng: Paid/Free › nhóm › nguồn",
+    "source.tbl.sub": "Bấm để xổ/thu. CV đếm từ Candidate Data theo nguồn · chi phí là all-time.",
+    "source.col.name": "Nguồn",
+    "source.col.cv": "CV",
+    "source.col.pct": "% tổng",
+    "source.col.cost": "Chi phí",
+    "source.col.costcv": "Cost/CV",
+    "source.paid": "Paid",
+    "source.free": "Free",
+    "source.free.cost": "miễn phí",
+    "source.costNote": "Chi phí paid để all-time (khó cắt chính xác theo ngày). Khi chọn range, CV lọc theo ngày nộp nhưng chi phí & cost/CV vẫn tính all-time.",
+    "source.rangeNote": "Trống = toàn thời gian · chọn ngày = chỉ đếm CV có ngày nộp trong khoảng.",
   },
 
   // ⚠️ KO-REVIEW: bản dịch máy, cần người Hàn rà lại.
@@ -129,6 +157,7 @@ const DICT: Record<Lang, Record<string, string>> = {
     "nav.jd": "Cost per CV by JD",
     "nav.budget": "Monthly Budget",
     "nav.daily": "Daily CV Tracking by JD",
+    "nav.source": "Source Analysis",
     "sidebar.footer": "채널별 비용 & CV — Google Sheets 실시간 연동.", // KO-REVIEW
     "sidebar.collapse": "접기", // KO-REVIEW
     "header.live": "Google Sheets 실시간", // KO-REVIEW
@@ -211,6 +240,33 @@ const DICT: Record<Lang, Record<string, string>> = {
     "daily.col.source": "Source",
     "daily.collapse": "접기", // KO-REVIEW
     "daily.foot": "종료일까지 CV가 있는 JD. 원본 CV(Candidate Data)에서 Apps Script JD DAILY와 동일 로직으로 계산.", // KO-REVIEW
+
+    "source.title": "Source Analysis",
+    "source.eyebrow": "CV 유입 출처 · Paid vs Free · 그룹 & 소스별", // KO-REVIEW
+    "source.kpi.totalCv": "총 CV", // KO-REVIEW
+    "source.kpi.paid": "CV Paid",
+    "source.kpi.free": "CV Free",
+    "source.kpi.costPerCvPaid": "Paid Cost/CV", // KO-REVIEW
+    "source.kpi.ofTotal": "총 CV 대비", // KO-REVIEW
+    "source.kpi.freeIsFree": "무료", // KO-REVIEW
+    "source.kpi.paidCostDivCv": "유료 비용 ÷ 유료 CV", // KO-REVIEW
+    "source.metaNote": "여기서 Meta는 landing-page_meta 소스로 집계하며, Paid channel 탭의 “플랫폼 리드”와 다릅니다.", // KO-REVIEW
+    "source.chart.splitTitle": "Paid vs Free",
+    "source.chart.splitSub": "소스 유형별 CV 비중", // KO-REVIEW
+    "source.chart.topTitle": "CV 상위 소스", // KO-REVIEW
+    "source.chart.topSub": "상위 ~10 소스(라벨 기준) · 분홍 = paid, 초록 = free", // KO-REVIEW
+    "source.tbl.title": "3단계 상세: Paid/Free › 그룹 › 소스", // KO-REVIEW
+    "source.tbl.sub": "클릭하여 펼치기/접기. CV는 Candidate Data 소스 기준 · 비용은 all-time.", // KO-REVIEW
+    "source.col.name": "소스", // KO-REVIEW
+    "source.col.cv": "CV",
+    "source.col.pct": "% 총합", // KO-REVIEW
+    "source.col.cost": "비용", // KO-REVIEW
+    "source.col.costcv": "Cost/CV",
+    "source.paid": "Paid",
+    "source.free": "Free",
+    "source.free.cost": "무료", // KO-REVIEW
+    "source.costNote": "유료 비용은 all-time 기준(정확한 일자 절단이 어려움). 기간 선택 시 CV는 제출일로 필터되지만 비용 & cost/CV는 all-time으로 계산.", // KO-REVIEW
+    "source.rangeNote": "비우면 전체 기간 · 날짜 선택 시 제출일이 범위 내인 CV만 집계.", // KO-REVIEW
   },
 };
 
